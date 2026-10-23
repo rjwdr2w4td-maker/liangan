@@ -1,0 +1,10 @@
+// Mock 数据汇总出口
+export * from './common/regions'
+export * from './common/users'
+export * from './common/dict'
+export * from './common/messages'
+export * from './geo/plot-gen'
+export * from './gpm/plans'
+export * from './sil/declarations'
+export * from './fsr/events'
+export * from './pes/data'

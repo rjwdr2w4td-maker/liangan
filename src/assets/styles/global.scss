@@ -1,0 +1,92 @@
+@use './variables.scss';
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #app { height: 100%; }
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: var(--ah-text);
+  background: var(--ah-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 通用页面容器 */
+.page-container {
+  padding: 14px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 卡片面板 */
+.panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(15, 62, 120, 0.08);
+  padding: 14px 16px;
+}
+
+.panel + .panel { margin-top: 12px; }
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ah-text);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--ah-border);
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    border-radius: 2px;
+    background: var(--ah-primary);
+    margin-right: 8px;
+  }
+
+  .title-text { display: flex; align-items: center; flex: 1; }
+  .title-extra { font-weight: 400; }
+}
+
+/* 表格微调 */
+.el-table {
+  --el-table-header-bg-color: #f5f8fc;
+  --el-table-header-text-color: #4a5568;
+  font-size: 13px;
+
+  th.el-table__cell { font-weight: 600; }
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #c2cad6; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a5b0bf; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 数字字体 */
+.num { font-family: 'DIN Alternate', 'Helvetica Neue', sans-serif; font-variant-numeric: tabular-nums; }
+
+/* 工具类 */
+.flex { display: flex; align-items: center; }
+.flex-1 { flex: 1; min-width: 0; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mb-12 { margin-bottom: 12px; }
+.text-secondary { color: var(--ah-text-secondary); }
+.text-primary { color: var(--ah-primary); }
+.text-danger { color: var(--ah-danger); }
+.text-success { color: var(--ah-success); }
+
+/* 弹窗圆角 */
+.el-dialog { border-radius: 10px; }
+.el-drawer { border-radius: 10px 0 0 10px; }

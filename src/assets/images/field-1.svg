@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#aee0f9"/><stop offset="100%" stop-color="#d8f0d0"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7ec850"/><stop offset="100%" stop-color="#4e9a34"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="160" fill="url(#sky)"/>
+  <circle cx="330" cy="50" r="26" fill="#ffe28a" opacity="0.9"/>
+  <rect y="140" width="400" height="160" fill="url(#field)"/>
+  <path d="M0 150 L400 130 L400 145 L0 168Z" fill="#6ab040"/>
+  <g stroke="#3d8426" stroke-width="2" opacity="0.6">
+    <path d="M20 300 Q30 240 40 300"/><path d="M50 300 Q60 235 70 300"/><path d="M80 300 Q90 245 100 300"/>
+    <path d="M110 300 Q120 238 130 300"/><path d="M140 300 Q150 242 160 300"/><path d="M170 300 Q180 236 190 300"/>
+    <path d="M200 300 Q210 244 220 300"/><path d="M230 300 Q240 238 250 300"/><path d="M260 300 Q270 242 280 300"/>
+    <path d="M290 300 Q300 236 310 300"/><path d="M320 300 Q330 240 340 300"/><path d="M350 300 Q360 243 370 300"/>
+  </g>
+  <rect x="0" y="290" width="400" height="10" fill="#3d7a28"/>
+  <text x="200" y="30" text-anchor="middle" font-size="14" fill="#4a6b3a" font-family="sans-serif"></text>
+</svg>

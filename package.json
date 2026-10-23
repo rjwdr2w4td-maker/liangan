@@ -1,0 +1,26 @@
+{
+  "name": "anhui-grain-safety-demo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "安徽省粮食生产安全监测监管信息化第4包 演示原型",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "dayjs": "^1.11.13",
+    "echarts": "^5.5.1",
+    "element-plus": "^2.8.8",
+    "leaflet": "^1.9.4",
+    "pinia": "^2.2.6",
+    "vue": "^3.5.13",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.0",
+    "sass": "^1.80.6",
+    "vite": "^5.4.11"
+  }
+}

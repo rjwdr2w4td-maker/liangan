@@ -1,0 +1,36 @@
+/* 一张图深色主题 —— 作用于 .map-dark-page 容器 */
+.map-dark-page {
+  position: absolute;
+  inset: 0;
+  background: #0b1626;
+  color: #d7e3f4;
+  display: flex;
+  flex-direction: column;
+
+  .panel,
+  .el-card {
+    background: rgba(13, 30, 52, 0.88);
+    border: 1px solid rgba(59, 102, 158, 0.35);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+    color: #d7e3f4;
+    backdrop-filter: blur(6px);
+  }
+
+  .panel-title {
+    color: #eaf2fc;
+    border-bottom-color: rgba(59, 102, 158, 0.35);
+  }
+
+  .el-table {
+    --el-table-bg-color: transparent;
+    --el-table-tr-bg-color: transparent;
+    --el-table-header-bg-color: rgba(23, 45, 74, 0.9);
+    --el-table-header-text-color: #9fc0e8;
+    --el-table-text-color: #d7e3f4;
+    --el-table-border-color: rgba(59, 102, 158, 0.25);
+    --el-table-row-hover-bg-color: rgba(30, 64, 108, 0.5);
+  }
+
+  .text-secondary { color: #7d97b8; }
+  .map-stat-value { color: #4fd0c6; }
+}

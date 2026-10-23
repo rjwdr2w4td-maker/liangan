@@ -1,0 +1,27 @@
+/* 政务蓝主题变量 —— 覆盖 Element Plus 主色 */
+:root {
+  --ah-primary: #0f5eb5;
+  --ah-primary-light: #3d82d6;
+  --ah-primary-dark: #0a4a94;
+  --ah-success: #2e9e5b;
+  --ah-warning: #e6a23c;
+  --ah-danger: #e64545;
+  --ah-info: #8a97a8;
+  --ah-bg: #f0f3f8;
+  --ah-border: #e4e9f1;
+  --ah-text: #26303f;
+  --ah-text-secondary: #6b7686;
+  --ah-header-bg: #0f3f78;
+  --ah-sidebar-bg: #10233c;
+}
+
+/* Element Plus 主色覆盖 */
+:root {
+  --el-color-primary: var(--ah-primary);
+  --el-color-primary-light-3: #4a8bd4;
+  --el-color-primary-light-5: #7faee2;
+  --el-color-primary-light-7: #b3d1ef;
+  --el-color-primary-light-8: #cfe1f6;
+  --el-color-primary-light-9: #e8f1fb;
+  --el-color-primary-dark-2: var(--ah-primary-dark);
+}
