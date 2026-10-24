@@ -15,8 +15,8 @@ export const MENU_CONFIG = [
     system: 'gpm',
     children: [
       // 基础数据：主体档案与地块台账分开管理
-      { title: '种植主体管理', route: '/gpm/subjects', icon: 'OfficeBuilding', section: '基础数据' },
-      { title: '地块管理', route: '/gpm/plots', icon: 'Grid', section: '基础数据' },
+      { title: '种植主体管理', route: '/gpm/subjects', icon: 'OfficeBuilding', section: '基础数据', roles: ['province'] },
+      { title: '地块管理', route: '/gpm/plots', icon: 'Grid', section: '基础数据', roles: ['province'] },
 
       // 计划编制与下达：制定 → 审核 → 下达
       { title: '种植计划制定', route: '/gpm/plan', icon: 'EditPen', section: '计划编制与下达', roles: ['province', 'city', 'county'] },

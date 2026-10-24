@@ -43,8 +43,8 @@ const routes = [
         meta: { subsystem: 'gpm' },
         children: [
           { path: 'plan', name: 'GpmPlan', component: () => import('@/views/gpm/PlanMake.vue'), meta: { title: '种植计划制定', roles: ['province', 'city', 'county'] } },
-          { path: 'subjects', name: 'GpmSubjects', component: () => import('@/views/gpm/Subjects.vue'), meta: { title: '种植主体管理' } },
-          { path: 'plots', name: 'GpmPlots', component: () => import('@/views/gpm/Plots.vue'), meta: { title: '地块管理' } },
+          { path: 'subjects', name: 'GpmSubjects', component: () => import('@/views/gpm/Subjects.vue'), meta: { title: '种植主体管理', roles: ['province'] } },
+          { path: 'plots', name: 'GpmPlots', component: () => import('@/views/gpm/Plots.vue'), meta: { title: '地块管理', roles: ['province'] } },
           { path: 'audit', name: 'GpmAudit', component: () => import('@/views/gpm/Audit.vue'), meta: { title: '种植计划审核', roles: ['province', 'city'] } },
           { path: 'supervise', name: 'GpmSupervise', component: () => import('@/views/gpm/Supervise.vue'), meta: { title: '种植计划监督', roles: ['province', 'city', 'county'] } },
           { path: 'stats', name: 'GpmStats', component: () => import('@/views/gpm/Stats.vue'), meta: { title: '计划管理统计' } },
