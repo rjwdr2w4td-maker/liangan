@@ -1,6 +1,6 @@
 <template>
   <div class="page-container gpm-page">
-    <div class="page-head"><div><h2>地块管理</h2><p>维护确权、流转地块台账，地块关联主体统一在种植主体管理中维护。</p></div><el-button type="primary" @click="openCreate">新增地块</el-button></div>
+    <div class="page-head"><div><h2>地块管理</h2><p>查看确权、流转地块台账，地块关联主体统一在种植主体管理中维护。</p></div></div>
     <div class="panel">
       <div class="panel-title"><span class="title-text">地块台账</span><span class="title-extra">共 {{ plots.length }} 块</span></div>
       <el-form :inline="true" class="filters"><el-form-item label="关键字"><el-input v-model="filters.keyword" clearable placeholder="地块名称/编号/主体" /></el-form-item><el-form-item label="来源"><el-select v-model="filters.source" clearable placeholder="全部" style="width:140px"><el-option label="确权地块" value="确权"/><el-option label="流转地块" value="流转"/></el-select></el-form-item><el-form-item label="关联状态"><el-select v-model="filters.status" clearable placeholder="全部" style="width:140px"><el-option label="已关联" value="已关联"/><el-option label="待确认" value="待确认"/></el-select></el-form-item><el-button type="primary" @click="loadPlots">查询</el-button><el-button @click="reset">重置</el-button></el-form>
