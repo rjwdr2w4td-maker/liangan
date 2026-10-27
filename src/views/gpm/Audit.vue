@@ -31,7 +31,7 @@
             <el-option v-for="item in quarters" :key="item" :label="item" :value="item" />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="!readonlyMode && userStore.role?.code !== 'province'" label="状态">
+        <el-form-item v-if="!readonlyMode" label="状态">
           <el-select v-model="filters.status" clearable placeholder="全部" style="width:130px">
             <el-option v-if="!readonlyMode" label="待审核" value="pending" />
             <el-option label="已通过" value="approved" />
@@ -52,16 +52,16 @@
         <el-table-column prop="actualArea" label="实际种植面积（万亩）" width="145" align="right" />
         <el-table-column prop="submitter" label="提交单位" min-width="160" />
         <el-table-column :prop="readonlyMode ? 'issuedAt' : 'submittedAt'" :label="readonlyMode ? '下达时间' : '提交时间'" width="110" />
-        <el-table-column v-if="!readonlyMode && userStore.role?.code !== 'province'" label="状态" width="95">
+        <el-table-column v-if="!readonlyMode" label="状态" width="95">
           <template #default="{ row }">
             <el-tag size="small" :type="tagType(row.status)">{{ statusName(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column v-if="!readonlyMode && userStore.role?.code !== 'province'" label="审核结果" width="105">
+        <el-table-column v-if="!readonlyMode" label="审核结果" width="105">
           <template #default="{ row }">{{ row.status === 'approved' ? '已通过' : row.status === 'rejected' ? '已退回' : '待审核' }}</template>
         </el-table-column>
-        <el-table-column v-if="!readonlyMode && userStore.role?.code !== 'province'" prop="auditor" label="审核人" width="120" />
-        <el-table-column v-if="!readonlyMode && userStore.role?.code !== 'province'" prop="auditedAt" label="审核时间" width="110" />
+        <el-table-column v-if="!readonlyMode" prop="auditor" label="审核人" width="120" />
+        <el-table-column v-if="!readonlyMode" prop="auditedAt" label="审核时间" width="110" />
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
@@ -87,13 +87,13 @@
             <span>{{ current.actualArea ?? current.totalArea }} 万亩</span>
           </el-descriptions-item>
           <el-descriptions-item :label="userStore.role?.code === 'city' ? '提交县数' : '县级计划数量'">{{ current.countyCount }} 个</el-descriptions-item>
-          <el-descriptions-item v-if="!readonlyMode && userStore.role?.code !== 'province'" :label="userStore.role?.code === 'city' ? '县级任务面积合计' : '县级计划种植面积合计'">
+          <el-descriptions-item v-if="!readonlyMode" :label="userStore.role?.code === 'city' ? '县级任务面积合计' : '县级计划种植面积合计'">
             <span>{{ countyTotal }} 万亩</span>
           </el-descriptions-item>
           <el-descriptions-item label="计划说明" :span="3">{{ current.planDescription }}</el-descriptions-item>
-          <el-descriptions-item v-if="!readonlyMode && userStore.role?.code !== 'province'" label="审核层级">{{ current.auditLevel || '省级审核' }}</el-descriptions-item>
-          <el-descriptions-item v-if="!readonlyMode && userStore.role?.code !== 'province'" label="审核人">{{ current.auditor || '待审核' }}</el-descriptions-item>
-          <el-descriptions-item v-if="!readonlyMode && userStore.role?.code !== 'province'" label="审核时间">{{ current.auditedAt || '待审核' }}</el-descriptions-item>
+          <el-descriptions-item v-if="!readonlyMode" label="审核层级">{{ current.auditLevel || '省级审核' }}</el-descriptions-item>
+          <el-descriptions-item v-if="!readonlyMode" label="审核人">{{ current.auditor || '待审核' }}</el-descriptions-item>
+          <el-descriptions-item v-if="!readonlyMode" label="审核时间">{{ current.auditedAt || '待审核' }}</el-descriptions-item>
         </el-descriptions>
 
         <div class="detail-title">
@@ -130,7 +130,7 @@
           <el-table-column label="落实面积（万亩）" width="160" align="right"><template #default="{ row }"><span>{{ row.actualArea ?? row.area }}</span></template></el-table-column>
           <el-table-column prop="cropType" label="作物类型" width="120" />
           <el-table-column prop="description" label="县级计划说明" min-width="200" show-overflow-tooltip />
-          <el-table-column v-if="!readonlyMode && userStore.role?.code !== 'province'" label="审核状态" width="105"><template #default="{ row }"><el-tag size="small" :type="tagType(row.status)">{{ statusName(row.status) }}</el-tag></template></el-table-column>
+          <el-table-column v-if="!readonlyMode" label="审核状态" width="105"><template #default="{ row }"><el-tag size="small" :type="tagType(row.status)">{{ statusName(row.status) }}</el-tag></template></el-table-column>
         </el-table>
 
         <el-input v-if="!readonlyMode && current.status === 'pending'" v-model="opinion" type="textarea" :rows="3" placeholder="填写审核意见；退回时必填" class="opinion-input" />

@@ -1,25 +1,266 @@
 <template>
   <div class="page-container progress-page">
-    <div class="stat-grid"><StatCard label="计划面积" :value="summary.planArea.toLocaleString()" unit="万亩" icon="DataLine" /><StatCard label="落实率" :value="summary.implementRate" unit="%" icon="CircleCheck" color="#2e9e5b" /><StatCard label="播种率" :value="summary.sowRate" unit="%" icon="Opportunity" color="#e6a23c" /><StatCard label="收获率" :value="summary.harvestRate" unit="%" icon="TrendCharts" color="#9b59b6" /></div>
-    <div class="content-grid"><div class="panel chart-panel"><div class="panel-title"><span class="title-text">年度进度趋势</span><span class="title-extra">{{ userStore.regionName }} · 权限范围内统计</span></div><BaseChart :option="trendOption" height="220px" /></div><div class="panel"><div class="panel-title"><span class="title-text">区域进度</span></div><el-table :data="rankData" size="small" height="220"><el-table-column prop="name" label="区域" /><el-table-column prop="implementRate" label="落实率"><template #default="{row}"><el-progress :percentage="row.implementRate" :stroke-width="8" /></template></el-table-column></el-table></div></div>
-    <div class="panel table-panel"><el-alert v-if="validationWarnings.length" :title="`数据校验提示：${validationWarnings.join('；')}`" type="warning" show-icon :closable="false" style="margin-bottom:12px"/><div class="panel-title"><span class="title-text">到户到田进度明细</span><div class="title-extra"><el-button type="primary" @click="openCreate">新增进度填报</el-button></div></div><el-form :inline="true" class="filters"><el-form-item label="关键字"><el-input v-model="filters.keyword" clearable placeholder="主体/地区/地块" /></el-form-item><el-form-item label="作物"><el-select v-model="filters.crop" clearable placeholder="全部" style="width:120px"><el-option v-for="item in crops" :key="item.code" :label="item.name" :value="item.code" /></el-select></el-form-item><el-form-item label="环节"><el-select v-model="filters.type" clearable placeholder="全部" style="width:120px"><el-option label="播种" value="sow" /><el-option label="收获" value="harvest" /></el-select></el-form-item></el-form><el-table :data="filteredRecords" stripe height="calc(100vh - 490px)"><el-table-column prop="date" label="填报日期" width="110" /><el-table-column prop="regionName" label="地区" width="110" /><el-table-column prop="subjectName" label="经营主体" min-width="180" show-overflow-tooltip /><el-table-column prop="planName" label="关联种植计划" min-width="220" show-overflow-tooltip /><el-table-column prop="taskId" label="落实任务" width="120" show-overflow-tooltip /><el-table-column prop="plotId" label="地块" width="90" /><el-table-column prop="cropName" label="作物" width="80" /><el-table-column label="环节" width="80"><template #default="{row}"><el-tag size="small" :type="row.type === 'sow' ? 'warning' : 'success'">{{ row.type === 'sow' ? '播种' : '收获' }}</el-tag></template></el-table-column><el-table-column prop="area" label="面积(亩)" width="95" align="right" /><el-table-column prop="reporter" label="填报人" width="90" /><el-table-column label="操作" width="70"><template #default="{row}"><el-button link type="primary" @click="showDetail(row)">详情</el-button></template></el-table-column></el-table></div>
-    <el-dialog v-model="createVisible" title="新增进度填报" width="560px"><el-form ref="formRef" :model="form" :rules="rules" label-width="90px"><el-form-item label="关联种植计划" prop="taskId"><el-select v-model="form.taskId" style="width:100%" placeholder="请选择已下达计划" @change="selectTask"><el-option v-for="item in planTasks" :key="item.taskId" :label="`${item.planName} / ${item.subjectName} / ${item.taskAreaMu}亩`" :value="item.taskId" /></el-select></el-form-item><el-form-item label="所属地区" prop="regionName"><el-input v-model="form.regionName" disabled /></el-form-item><el-form-item label="经营主体" prop="subjectName"><el-input v-model="form.subjectName" disabled /></el-form-item><el-form-item label="主体编号" prop="subjectId"><el-input v-model="form.subjectId" disabled /></el-form-item><el-form-item label="地块编号" prop="plotId"><el-select v-model="form.plotId" style="width:100%" placeholder="请选择关联地块"><el-option v-for="item in availablePlots" :key="item.id" :label="`${item.id} / ${item.name} / ${item.areaMu}亩`" :value="item.id" /></el-select></el-form-item><el-form-item label="作物" prop="crop"><el-select v-model="form.crop" style="width:100%"><el-option v-for="item in crops" :key="item.code" :label="item.name" :value="item.code" /></el-select></el-form-item><el-form-item label="作业环节" prop="type"><el-radio-group v-model="form.type"><el-radio value="sow">播种</el-radio><el-radio value="harvest">收获</el-radio></el-radio-group></el-form-item><el-form-item label="面积(亩)" prop="area"><el-input-number v-model="form.area" :min="1" style="width:100%" /></el-form-item><el-form-item label="作业日期" prop="date"><el-date-picker v-model="form.date" value-format="YYYY-MM-DD" style="width:100%" /></el-form-item></el-form><template #footer><el-button @click="createVisible=false">取消</el-button><el-button type="primary" @click="submit">保存并刷新</el-button></template></el-dialog>
-    <el-drawer v-model="detailVisible" title="进度详情" size="420px"><el-descriptions v-if="current" :column="1" border><el-descriptions-item label="记录编号">{{ current.id }}</el-descriptions-item><el-descriptions-item label="关联计划/任务">{{ current.planName }} / {{ current.taskId || '未关联' }}</el-descriptions-item><el-descriptions-item label="地区/主体">{{ current.regionName }} / {{ current.subjectName }}</el-descriptions-item><el-descriptions-item label="地块/作物">{{ current.plotId }} / {{ current.cropName }}</el-descriptions-item><el-descriptions-item label="环节/面积">{{ current.type === 'sow' ? '播种' : '收获' }} / {{ current.area }} 亩</el-descriptions-item><el-descriptions-item label="填报信息">{{ current.reporter }} · {{ current.source }}</el-descriptions-item></el-descriptions></el-drawer>
+    <el-dialog v-model="reportVisible" title="主体播种进度上报详情" width="820px">
+      <el-descriptions v-if="selectedReport" :column="2" border class="report-summary">
+        <el-descriptions-item label="种植主体">{{ selectedReport.subjectName }}</el-descriptions-item>
+        <el-descriptions-item label="所属地区">{{ selectedReport.regionName }}</el-descriptions-item>
+        <el-descriptions-item label="上报作物数">{{ selectedReport.reports.length }} 种</el-descriptions-item>
+        <el-descriptions-item label="最近填报日期">{{ selectedReport.updatedAt }}</el-descriptions-item>
+      </el-descriptions>
+      <el-table v-if="selectedReport" :data="selectedReport.reports" border stripe class="report-table">
+        <el-table-column prop="cropName" label="作物" width="100" />
+        <el-table-column prop="planArea" label="计划面积（亩）" align="right" />
+        <el-table-column prop="sownArea" label="已播面积（亩）" align="right" />
+        <el-table-column label="播种进度" width="120" align="center">
+          <template #default="{ row }">{{ row.sowProgress }}%</template>
+        </el-table-column>
+        <el-table-column prop="updatedAt" label="填报日期" width="120" />
+      </el-table>
+    </el-dialog>
+    <div class="page-header">
+      <div>
+        <h2>播种进度调度</h2>
+        <p>播种进度以已下达的种植计划为基准，主体按计划任务上报已播面积。</p>
+      </div>
+      <div class="scope-label">当前范围：{{ userStore.regionName }}</div>
+    </div>
+
+    <div class="panel list-panel">
+      <div class="toolbar">
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item v-for="item in breadcrumbs" :key="item.code">
+            <span class="breadcrumb-link" @click="goToLevel(item)">{{ item.name }}</span>
+          </el-breadcrumb-item>
+        </el-breadcrumb>
+        <span class="record-count">共 {{ currentRows.length }} 条记录</span>
+      </div>
+
+      <div v-if="isSubjectLevel" class="detail-tip">
+        {{ currentRegionName }}种植主体播种进度上报明细
+      </div>
+
+      <el-table :data="currentRows" stripe border height="calc(100vh - 260px)">
+        <el-table-column type="index" label="序号" width="65" align="center" />
+        <el-table-column :label="isSubjectLevel ? '主体/地区' : currentChildLabel" min-width="190">
+          <template #default="{ row }">
+            <span v-if="isSubjectLevel">{{ row.subjectName || row.regionName }}</span>
+            <el-button v-else link type="primary" @click="openLevel(row)">{{ row.name }}</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="isSubjectLevel" prop="cropName" label="作物" width="100" />
+        <el-table-column v-if="isSubjectLevel" prop="planName" label="下达计划" min-width="220" show-overflow-tooltip />
+        <el-table-column v-if="isSubjectLevel" prop="cropName" label="计划作物" width="100" />
+        <el-table-column prop="planArea" label="下达面积（亩）" width="140" align="right" />
+        <el-table-column prop="sownArea" label="已播面积（亩）" width="140" align="right" />
+        <el-table-column label="播种进度" width="190">
+          <template #default="{ row }">
+            <div class="progress-cell">
+              <el-progress :percentage="row.sowProgress" :stroke-width="10" />
+              <span>{{ row.sowProgress }}%</span>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="isSubjectLevel" prop="updatedAt" label="填报日期" width="120" />
+        <el-table-column v-if="isSubjectLevel" label="操作" width="130" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="viewSubjectReport(row)">查看上报</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column v-else label="操作" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openLevel(row)">查看下级</el-button>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="暂无上报进度记录" />
+        </template>
+      </el-table>
+    </div>
   </div>
 </template>
+
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
-import dayjs from 'dayjs'
-import { ElMessage } from 'element-plus'
-import StatCard from '@/components/common/StatCard.vue'
-import BaseChart from '@/components/charts/BaseChart.vue'
-import { CROPS, CROP_MAP } from '@/mock/common/dict'
-import { PLOTS } from '@/mock/geo/plot-gen'
+import { computed, onMounted, ref } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { addProgressRecord, fetchProgressRecords, fetchProgressSummary, fetchRankData, fetchSubjectPlanTasks } from '@/api/gpm'
-const userStore = useUserStore(); const crops = CROPS.slice(0, 4); const records = ref([]); const planTasks = ref([]); const rankData = ref([]); const summary = ref({ planArea: 0, implementRate: 0, sowRate: 0, harvestRate: 0 }); const filters = reactive({ keyword: '', crop: '', type: '' }); const createVisible = ref(false); const detailVisible = ref(false); const current = ref(null); const formRef = ref(null); const form = reactive({ planId: '', planName: '', taskId: '', regionName: '', subjectName: '', subjectId: '', plotId: '', crop: 'wheat', type: 'sow', area: 1, date: dayjs().format('YYYY-MM-DD') }); const rules = { taskId: [{ required: true, message: '请选择关联种植计划' }], regionName: [{ required: true, message: '请输入地区' }], subjectName: [{ required: true, message: '请输入主体' }], subjectId: [{ required: true, message: '请输入主体编号' }], plotId: [{ required: true, message: '请选择地块' }], area: [{ required: true, message: '请输入面积' }] }
-const selectedTask = computed(() => planTasks.value.find(item => item.taskId === form.taskId)); const availablePlots = computed(() => selectedTask.value ? PLOTS.filter(item => item.subjectId === form.subjectId && String(item.regionCode || '').startsWith(String(selectedTask.value.townCode || selectedTask.value.countyCode || ''))) : []); const plotLimit = computed(() => { const plot = PLOTS.find(item => item.id === form.plotId); if (!plot) return null; const previous = records.value.filter(item => item.plotId === form.plotId && item.planId === form.planId); return { area: Number(plot.areaMu || 0), sow: previous.filter(item => item.type === 'sow' || item.type === 'planting').reduce((sum, item) => sum + Number(item.area || 0), 0), harvest: previous.filter(item => item.type === 'harvest').reduce((sum, item) => sum + Number(item.area || 0), 0) } }); const validationWarnings = computed(() => { const warnings = []; records.value.forEach(item => { if (!item.plotId) warnings.push(`${item.id} 缺少地块`); if (Number(item.area) <= 0) warnings.push(`${item.id} 面积异常`) }); return warnings.slice(0, 3) }); const filteredRecords = computed(() => records.value.filter(item => (!filters.keyword || `${item.subjectName}${item.regionName}${item.plotId}`.includes(filters.keyword)) && (!filters.crop || item.crop === filters.crop) && (!filters.type || item.type === filters.type)))
-const trendOption = computed(() => ({ tooltip: { trigger: 'axis' }, legend: { data: ['落实率', '播种率', '收获率'] }, xAxis: { type: 'category', data: ['6月', '7月', '8月', '9月'] }, yAxis: { type: 'value', max: 100, axisLabel: { formatter: '{value}%' } }, series: [{ name: '落实率', type: 'line', smooth: true, data: [36, 52, 68, summary.value.implementRate] }, { name: '播种率', type: 'line', smooth: true, data: [28, 45, 63, summary.value.sowRate] }, { name: '收获率', type: 'line', smooth: true, data: [5, 14, 27, summary.value.harvestRate] }] }))
-const load = async () => { records.value = await fetchProgressRecords(userStore.role || {}); planTasks.value = await fetchSubjectPlanTasks(userStore.role || {}); summary.value = await fetchProgressSummary(userStore.role); rankData.value = await fetchRankData(userStore.role) }; const selectTask = (taskId) => { const task = planTasks.value.find(item => item.taskId === taskId); if (!task) return; Object.assign(form, { planId: task.planId, planName: task.planName, regionName: task.townName || task.countyName, subjectName: task.subjectName, subjectId: task.subjectId, plotId: '', crop: ({ 小麦: 'wheat', 水稻: 'rice', 玉米: 'corn', 大豆: 'soybean' })[task.cropType] || 'wheat' }) }; const openCreate = () => { Object.assign(form, { planId: '', planName: '', taskId: '', regionName: userStore.regionName, subjectName: userStore.role?.subjectId ? userStore.role.unit : '', subjectId: userStore.role?.subjectId || '', plotId: '', crop: 'wheat', type: 'sow', area: 1, date: dayjs().format('YYYY-MM-DD') }); createVisible.value = true }; const submit = async () => { const limit = plotLimit.value; if (!selectedTask.value) return ElMessage.warning('请先选择已下达的种植计划'); if (limit && Number(form.area) > limit.area) return ElMessage.warning(`填报面积不能超过地块面积 ${limit.area.toFixed(1)} 亩`); if (limit && form.type === 'sow' && Number(form.area) + limit.sow > limit.area) return ElMessage.warning(`累计播种面积不能超过地块面积 ${limit.area.toFixed(1)} 亩`); if (limit && form.type === 'harvest' && Number(form.area) > limit.sow) return ElMessage.warning(`收获面积不能超过播种面积 ${limit.sow.toFixed(1)} 亩`); await formRef.value.validate(); const result = await addProgressRecord({ ...form, role: userStore.role, regionCode: selectedTask.value?.townCode || selectedTask.value?.countyCode || userStore.role?.regionCode, regionName: selectedTask.value?.townName || selectedTask.value?.countyName || form.regionName, cropName: CROP_MAP[form.crop].name, reporter: userStore.role?.name || '当前用户', source: userStore.role?.subjectId ? '皖企通填报' : 'PC端填报' }); if (!result.success) return ElMessage.error(result.message); ElMessage.success('进度记录已新增'); createVisible.value = false; await load() }; const showDetail = row => { current.value = row; detailVisible.value = true }; onMounted(load)
+import { fetchSowingProgress } from '@/api/gpm'
+import { getRegion } from '@/mock/common/regions'
+const userStore = useUserStore()
+const records = ref([])
+const reportVisible = ref(false)
+const selectedReport = ref(null)
+const currentCode = ref('')
+const breadcrumbs = ref([])
+
+const roleLevel = computed(() => userStore.role?.code || 'province')
+const currentRegion = computed(() => getRegion(currentCode.value))
+const currentLevel = computed(() => breadcrumbs.value.length - 1)
+const subjectLevel = computed(() => ({ province: 3, city: 2, county: 1, town: 0 }[roleLevel.value] ?? 3))
+const isSubjectLevel = computed(() => currentLevel.value >= subjectLevel.value || !currentRegion.value?.children?.length)
+const currentRegionName = computed(() => currentRegion.value?.name || userStore.regionName || '本区域')
+const currentChildLabel = computed(() => {
+  if (currentLevel.value === 0) return '市级地区'
+  if (currentLevel.value === 1) return '县级地区'
+  if (currentLevel.value === 2) return '乡镇地区'
+  return '种植主体'
+})
+
+const sumRows = rows => {
+  const planArea = rows.reduce((sum, item) => sum + Number(item.planArea || 0), 0)
+  const sownArea = rows.reduce((sum, item) => sum + Number(item.sownArea || 0), 0)
+  return {
+    planArea: Number(planArea.toFixed(1)),
+    sownArea: Number(sownArea.toFixed(1)),
+    sowProgress: planArea ? Number((sownArea / planArea * 100).toFixed(1)) : 0
+  }
+}
+
+const rowsInRegion = code => records.value.filter(item => String(item.regionCode || '').startsWith(String(code)))
+const currentRows = computed(() => {
+  if (isSubjectLevel.value) {
+    const subjectRows = rowsInRegion(currentCode.value)
+      .filter(item => item.level === 'subject')
+      .filter(item => !filters.crop || item.crop === filters.crop)
+    if (subjectRows.length) {
+      const grouped = new Map()
+      subjectRows.forEach(item => {
+        const key = item.subjectId || item.subjectName || item.regionCode
+        const current = grouped.get(key) || {
+          ...item,
+          reports: [],
+          planArea: 0,
+          sownArea: 0
+        }
+        current.reports.push(item)
+        current.planArea += Number(item.planArea || 0)
+        current.sownArea += Number(item.sownArea || 0)
+        current.sowProgress = current.planArea ? Number((current.sownArea / current.planArea * 100).toFixed(1)) : 0
+        grouped.set(key, current)
+      })
+      return [...grouped.values()]
+    }
+
+    return rowsInRegion(currentCode.value)
+      .filter(item => item.level !== 'city' && item.level !== 'county')
+      .filter(item => !filters.crop || item.crop === filters.crop)
+      .map(item => ({ ...item, subjectName: item.subjectName || item.regionName }))
+  }
+
+  const level = ['city', 'county', 'town'][currentLevel.value]
+  return (currentRegion.value?.children || []).map(region => ({
+    ...region,
+    ...sumRows(rowsInRegion(region.code).filter(item => item.level === level))
+  })).filter(item => item.planArea > 0)
+})
+const filters = { crop: '' }
+
+const load = async () => {
+  records.value = await fetchSowingProgress(userStore.role || {})
+  const roleRegionCode = userStore.role?.regionCode || '340000'
+  currentCode.value = roleRegionCode
+  const root = getRegion(roleRegionCode)
+  breadcrumbs.value = root ? [root] : [{ code: roleRegionCode, name: userStore.regionName || '安徽省' }]
+}
+const openLevel = row => {
+  currentCode.value = row.code
+  breadcrumbs.value = [...breadcrumbs.value, row]
+}
+const viewSubjectReport = row => {
+  selectedReport.value = row
+  reportVisible.value = true
+}
+const goToLevel = item => {
+  const index = breadcrumbs.value.findIndex(row => row.code === item.code)
+  if (index < 0) return
+  breadcrumbs.value = breadcrumbs.value.slice(0, index + 1)
+  currentCode.value = item.code
+}
+
+onMounted(load)
 </script>
-<style lang="scss" scoped>.progress-page{gap:12px;overflow:auto}.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.content-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}.table-panel{min-height:500px}.filters :deep(.el-form-item){margin-bottom:12px}@media(max-width:1050px){.stat-grid{grid-template-columns:repeat(2,1fr)}.content-grid{grid-template-columns:1fr}}</style>
+
+<style lang="scss" scoped>
+.progress-page {
+  gap: 12px;
+  overflow: hidden;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 2px;
+
+  h2 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 20px;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: #909399;
+    font-size: 13px;
+  }
+}
+
+.scope-label {
+  color: #606266;
+  font-size: 13px;
+}
+
+.list-panel {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.breadcrumb-link {
+  color: #409eff;
+  cursor: pointer;
+}
+
+.record-count {
+  color: #909399;
+  font-size: 13px;
+}
+
+.detail-tip {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  color: #606266;
+  background: #f4f8ff;
+  border-radius: 4px;
+}
+
+.progress-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  :deep(.el-progress) {
+    flex: 1;
+  }
+
+  span {
+    width: 42px;
+    color: #606266;
+    text-align: right;
+  }
+}
+
+@media (max-width: 800px) {
+  .page-header,
+  .toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+</style>

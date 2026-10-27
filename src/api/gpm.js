@@ -1,6 +1,6 @@
 // 粮食计划管理 API（模拟）
 import { mockRequest } from './request'
-import { CITY_PLANS, COUNTY_PLANS, TOWN_PLANS, PLAN_PLOTS, PROGRESS_RECORDS, POLICIES, WEATHER_ALERTS, DISASTERS, RESCUE_ACTIONS, PROVINCE_PLAN, PLANTING_PLAN_LIST, PLANTING_PLAN_CITY_TASKS, QUARTERLY_PLAN_TARGETS, CITY_QUARTER_ALLOCATIONS, PLAN_HISTORY, TASK_HISTORY, TASK_PATH_DETAILS, PLAN_SUBJECTS, SUBJECT_PLOT_RELATIONS, PLAN_AUDITS, PLAN_SUPERVISE, PLAN_STATS } from '@/mock/gpm/plans'
+import { CITY_PLANS, COUNTY_PLANS, TOWN_PLANS, PLAN_PLOTS, PROGRESS_RECORDS, SOWING_PROGRESS_ROWS, HARVEST_PROGRESS_ROWS, POLICIES, WEATHER_ALERTS, DISASTERS, DISASTER_ARCHIVES, RESCUE_ACTIONS, PROVINCE_PLAN, PLANTING_PLAN_LIST, PLANTING_PLAN_CITY_TASKS, QUARTERLY_PLAN_TARGETS, CITY_QUARTER_ALLOCATIONS, PLAN_HISTORY, TASK_HISTORY, TASK_PATH_DETAILS, PLAN_SUBJECTS, SUBJECT_PLOT_RELATIONS, PLAN_AUDITS, PLAN_SUPERVISE, PLAN_STATS } from '@/mock/gpm/plans'
 import { getRegion, listCities } from '@/mock/common/regions'
 import { PLOTS, SUBJECT_MAP } from '@/mock/geo/plot-gen'
 import { CROP_MAP } from '@/mock/common/dict'
@@ -273,6 +273,7 @@ const visiblePlantingPlans = (role) => {
   return PLANTING_PLAN_LIST.filter((plan) => versions.some((item) => item.planId === plan.id) || ['已分解', '待分解', '已自动下达', '已下达'].includes(plan.status))
 }
 export const fetchPlantingPlans = (role, filters = {}) => mockRequest(() => visiblePlantingPlans(role).filter((item) => (!filters.year || item.year === Number(filters.year)) && (!filters.quarter || item.quarter === filters.quarter) && (!filters.keyword || `${item.cropType}${item.description}`.includes(filters.keyword))).map((item) => planVersionForRole(item.id, role) ? { ...item, ...planVersionForRole(item.id, role), id: item.id } : item))
+export const fetchIssuedPlantingPlans = (role, filters = {}) => mockRequest(() => visiblePlantingPlans(role).filter((item) => ['已分解', '已下达', '已自动下达'].includes(item.status)).filter((item) => (!filters.year || item.year === Number(filters.year)) && (!filters.quarter || item.quarter === filters.quarter) && (!filters.keyword || `${item.cropType}${item.description}`.includes(filters.keyword))).map((item) => ({ ...item, readonly: true, issueStatus: '最终下达版', issuedAt: item.issuedAt || '' })))
 export const savePlantingPlan = (data, role) => mockRequest(() => {
   if (!role || !['province', 'city', 'county'].includes(role.code)) return failed('当前角色无权维护种植计划')
   if (role.code !== 'province' && !data.id) return failed('市级和县级只能修改省级下达的种植计划')
@@ -438,6 +439,51 @@ export const fetchPlantingPlanSubjectTasks = (planId, role) => mockRequest(() =>
     })
   })
   return rows
+})
+export const fetchPlantingPlanIssueRows = (planId, level, role, parent = null) => mockRequest(async () => {
+  // #region debug-point A:issue-rows
+  fetch('http://127.0.0.1:7777/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: 'role-switch-plan-issue', runId: 'pre', hypothesisId: 'A', location: 'gpm.js:449', msg: '[DEBUG] issue rows entered', data: { planId, level, role: role?.code, parent: parent?.id || null }, ts: Date.now() }) }).catch(() => {})
+  // #endregion
+  if (level === 'subject') {
+    const countyRole = {
+      ...role,
+      code: 'county',
+      regionCode: parent?.countyCode || role?.regionCode,
+      regionName: parent?.countyName || role?.regionName
+    }
+    return fetchPlantingPlanSubjectTasks(planId, countyRole)
+  }
+
+  const plan = PLANTING_PLAN_LIST.find((item) => item.id === planId)
+  if (!plan) return []
+  const version = planVersionForRole(planId, role)
+  const source = level === 'city'
+    ? listCities()
+    : COUNTY_PLANS.filter((item) => item.cityCode === (parent?.cityCode || role?.regionCode))
+  const area = Number(version?.area || plan.area)
+  const average = Number((area / Math.max(source.length, 1)).toFixed(2))
+  return source
+    .filter((item) => level !== 'city' || role?.code !== 'city' || item.code === role.regionCode)
+    .map((item, index, visibleSource) => {
+    const code = level === 'city' ? item.code : item.countyCode
+    const name = level === 'city' ? item.name : item.countyName
+    const targetArea = level === 'city'
+      ? index === visibleSource.length - 1 ? Number((area - average * (visibleSource.length - 1)).toFixed(2)) : average
+      : Number(item.totalArea || item.targetArea || 0)
+    return withPlanFactors({
+      id: `${planId}-${level}-${code}`,
+      planId,
+      level,
+      cityCode: level === 'city' ? code : item.cityCode,
+      cityName: level === 'city' ? name : item.cityName,
+      countyCode: level === 'county' ? code : '',
+      countyName: level === 'county' ? name : '',
+      targetArea,
+      cropType: version?.cropType || plan.cropType,
+      issuedAt: item.issuedAt || '',
+      hasChildren: true
+    }, plan)
+  })
 })
 export const savePlantingPlanSubjectTasks = (planId, rows, role) => mockRequest(() => {
   if (role?.code !== 'county') return failed('只有县级管理员可以分解到种植主体和地块')
@@ -749,6 +795,121 @@ export const implementPlanPlots = ({ plotIds, crop, role, status = 'implemented'
   return success({ count: selected.length })
 })
 
+const issuedPlanProgressRows = (role, type) => {
+  const rows = TASK_PATH_DETAILS.flatMap((task) => {
+    const crop = Object.entries(CROP_MAP).find(([, item]) => item.name === task.cropType)?.[0] || task.cropType
+    const records = PROGRESS_RECORDS.filter((record) => record.subjectId === task.subjectId && record.cropName === task.cropType)
+    const reportedArea = records
+      .filter((record) => type === 'sow' ? ['sow', 'planting'].includes(record.type) : record.type === 'harvest')
+      .reduce((sum, record) => sum + Number(record.area || 0), 0)
+    const base = {
+      year: task.year,
+      planId: progressPlanId(task),
+      taskId: task.id,
+      planName: task.planName,
+      crop,
+      cropName: task.cropType,
+      planArea: Number(task.taskArea || 0),
+      regionCode: task.townCode,
+      regionName: task.townName,
+      cityCode: task.cityCode,
+      cityName: task.cityName,
+      countyCode: task.countyCode,
+      countyName: task.countyName,
+      townCode: task.townCode,
+      townName: task.townName,
+      reportedArea,
+      sownArea: type === 'sow' ? reportedArea : 0,
+      harvestedArea: type === 'harvest' ? reportedArea : 0,
+      updatedAt: task.issuedAt
+    }
+    return [
+      { ...base, id: `${type}-${task.id}-city`, level: 'city', regionCode: task.cityCode, regionName: task.cityName },
+      { ...base, id: `${type}-${task.id}-county`, level: 'county', regionCode: task.countyCode, regionName: task.countyName },
+      { ...base, id: `${type}-${task.id}-town`, level: 'town' },
+      { ...base, id: `${type}-${task.id}-subject`, level: 'subject', subjectId: task.subjectId, subjectName: task.subjectName, owner: task.owner }
+    ]
+  })
+
+  return rows.filter((item) => {
+    if (!role || role.code === 'province' || role.regionCode === '340000') return true
+    if (role.subjectId) return item.subjectId === role.subjectId
+    return String(item.regionCode || '').startsWith(String(role.regionCode || '')) || String(item.countyCode || '').startsWith(String(role.regionCode || '')) || String(item.townCode || '').startsWith(String(role.regionCode || ''))
+  })
+}
+
+const sowingRowsForRole = (role) => {
+  const issuedRows = issuedPlanProgressRows(role, 'sow')
+  if (issuedRows.length) return issuedRows
+  if (!role || role.code === 'province' || role.regionCode === '340000') return SOWING_PROGRESS_ROWS
+  const regionCode = String(role.regionCode || '')
+  return SOWING_PROGRESS_ROWS.filter((item) => {
+    if (role.code === 'city') {
+      return String(item.cityCode || '').startsWith(regionCode)
+    }
+    if (role.code === 'county') {
+      return String(item.countyCode || item.regionCode || '').startsWith(regionCode)
+    }
+    if (role.code === 'town') {
+      return String(item.townCode || item.regionCode || '').startsWith(regionCode)
+    }
+    if (role.subjectId) return item.subjectId === role.subjectId
+    return String(item.regionCode || '').startsWith(regionCode)
+  })
+}
+const sowingProgress = (row) => row.planArea > 0 ? Number((row.sownArea / row.planArea * 100).toFixed(1)) : 0
+const harvestProgress = (row) => row.planArea > 0 ? Number((row.harvestedArea / row.planArea * 100).toFixed(1)) : 0
+const progressSummary = (rows, areaField, rateField) => {
+  const planArea = rows.reduce((sum, item) => sum + Number(item.planArea || 0), 0)
+  const area = rows.reduce((sum, item) => sum + Number(item[areaField] || 0), 0)
+  return {
+    planArea,
+    [areaField]: area,
+    [rateField]: planArea ? Number((area / planArea * 100).toFixed(1)) : 0
+  }
+}
+const harvestRowsForRole = (role) => {
+  const issuedRows = issuedPlanProgressRows(role, 'harvest')
+  if (issuedRows.length) return issuedRows
+  if (!role || role.code === 'province' || role.regionCode === '340000') return HARVEST_PROGRESS_ROWS
+  const regionCode = String(role.regionCode || '')
+  return HARVEST_PROGRESS_ROWS.filter((item) => {
+    if (role.code === 'city') return String(item.cityCode || '').startsWith(regionCode)
+    if (role.code === 'county') return String(item.countyCode || item.regionCode || '').startsWith(regionCode)
+    if (role.code === 'town') return String(item.townCode || item.regionCode || '').startsWith(regionCode)
+    if (role.subjectId) return item.subjectId === role.subjectId
+    return String(item.regionCode || '').startsWith(regionCode)
+  })
+}
+export const fetchSowingProgress = (role, filters = {}) => mockRequest(() => sowingRowsForRole(role).filter((item) => (!filters.year || Number(item.year) === Number(filters.year)) && (!filters.keyword || `${item.regionName}${item.crop}`.includes(filters.keyword)) && (!filters.crop || item.crop === filters.crop)).map((item) => ({ ...item, sowProgress: sowingProgress(item) })))
+export const fetchHarvestProgress = (role, filters = {}) => mockRequest(() => harvestRowsForRole(role).filter((item) => (!filters.year || Number(item.year) === Number(filters.year)) && (!filters.keyword || `${item.regionName}${item.crop}`.includes(filters.keyword)) && (!filters.crop || item.crop === filters.crop)).map((item) => ({ ...item, harvestProgress: harvestProgress(item) })))
+export const saveSowingProgress = (data, role) => mockRequest(() => {
+  if (!data.regionCode || !data.regionName || !data.crop) return failed('地区和作物不能为空')
+  if (!inRoleScope({ regionCode: data.regionCode }, role)) return failed('当前角色无权填报该地区')
+  const planArea = Number(data.planArea)
+  const sownArea = Number(data.sownArea)
+  if (!Number.isFinite(planArea) || planArea <= 0) return failed('计划面积必须大于0')
+  if (!Number.isFinite(sownArea) || sownArea < 0) return failed('已播面积不能小于0')
+  if (sownArea > planArea) return failed('已播面积不能超过计划面积')
+  const existing = SOWING_PROGRESS_ROWS.find((item) => item.regionCode === data.regionCode && item.crop === data.crop)
+  const next = { ...data, year: Number(data.year || 2026), planArea, sownArea, updatedAt: new Date().toISOString().slice(0, 10) }
+  if (existing) Object.assign(existing, next)
+  else SOWING_PROGRESS_ROWS.unshift({ id: `SOW-${Date.now()}`, level: role?.code || 'region', ...next })
+  return success({ item: { ...(existing || next), sowProgress: sowingProgress(existing || next) } })
+})
+export const fetchSowingSummary = (role) => mockRequest(() => progressSummary(sowingRowsForRole(role), 'sownArea', 'sowProgress'))
+export const fetchHarvestSummary = (role) => mockRequest(() => progressSummary(harvestRowsForRole(role), 'harvestedArea', 'harvestProgress'))
+export const fetchSowingRankData = (role) => mockRequest(() => {
+  const rows = sowingRowsForRole(role)
+  const grouped = Object.values(rows.reduce((result, item) => {
+    const current = result[item.regionCode] || { code: item.regionCode, name: item.regionName, planArea: 0, sownArea: 0 }
+    current.planArea += Number(item.planArea || 0)
+    current.sownArea += Number(item.sownArea || 0)
+    result[item.regionCode] = current
+    return result
+  }, {}))
+  return grouped.map((item) => ({ ...item, sowProgress: item.planArea ? Number((item.sownArea / item.planArea * 100).toFixed(1)) : 0 }))
+})
 export const fetchProgressRecords = (role) => mockRequest(() => PROGRESS_RECORDS.filter((item) => inRoleScope(item, role)))
 export const fetchSubjectPlanTasks = (role) => mockRequest(() => progressTaskRows(role))
 export const addProgressRecord = (record) => mockRequest(() => {
@@ -780,7 +941,43 @@ export const fetchProgressSummary = (role) => mockRequest(() => {
 })
 
 export const fetchPolicies = () => mockRequest(() => POLICIES)
+export const addPolicy = (record) => mockRequest(() => {
+  if (!record.title || !record.category || !record.dept || !record.summary || !record.content) return failed('政策标题、类别、部门、摘要和内容不能为空')
+  const item = { ...record, id: `POL-${String(POLICIES.length + 1).padStart(3, '0')}`, publishDate: new Date().toISOString().slice(0, 10), effectiveDate: `${new Date().toISOString().slice(0, 10)} 起`, process: [], materials: '' }
+  POLICIES.unshift(item)
+  return success({ item })
+})
+export const updatePolicy = (record) => mockRequest(() => {
+  const index = POLICIES.findIndex(item => item.id === record.id)
+  if (index < 0) return failed('政策不存在')
+  POLICIES[index] = { ...POLICIES[index], ...record }
+  return success({ item: POLICIES[index] })
+})
+export const deletePolicy = (id) => mockRequest(() => {
+  const index = POLICIES.findIndex(item => item.id === id)
+  if (index < 0) return failed('政策不存在')
+  POLICIES.splice(index, 1)
+  return success()
+})
 export const fetchWeatherAlerts = (role) => mockRequest(() => WEATHER_ALERTS.filter((item) => item.regionCode === '340000' || inRoleScope(item, role)))
+export const addWeatherAlert = (record) => mockRequest(() => {
+  if (!record.regionCode || !record.type || !record.content) return failed('区域、天气类型和信息内容不能为空')
+  const item = { ...record, id: `WA-${String(WEATHER_ALERTS.length + 1).padStart(3, '0')}` }
+  WEATHER_ALERTS.unshift(item)
+  return success({ item })
+})
+export const updateWeatherAlert = (record) => mockRequest(() => {
+  const index = WEATHER_ALERTS.findIndex(item => item.id === record.id)
+  if (index < 0) return failed('气象信息不存在')
+  WEATHER_ALERTS[index] = { ...WEATHER_ALERTS[index], ...record }
+  return success({ item: WEATHER_ALERTS[index] })
+})
+export const deleteWeatherAlert = (id) => mockRequest(() => {
+  const index = WEATHER_ALERTS.findIndex(item => item.id === id)
+  if (index < 0) return failed('气象信息不存在')
+  WEATHER_ALERTS.splice(index, 1)
+  return success()
+})
 export const fetchDisasters = (role) => mockRequest(() => DISASTERS.filter((item) => inRoleScope(item, role)))
 export const fetchRescueActions = (disasterId) => mockRequest(() => RESCUE_ACTIONS.filter((item) => item.disasterId === disasterId))
 export const addDisaster = (record) => mockRequest(() => {
@@ -802,6 +999,34 @@ export const updateDisasterStatus = (id, status, action) => mockRequest(() => {
   item.status = status
   if (action) RESCUE_ACTIONS.push({ id: `RA-${String(RESCUE_ACTIONS.length + 1).padStart(3, '0')}`, disasterId: id, ...action })
   return success({ item })
+})
+export const fetchDisasterArchives = () => mockRequest(() => DISASTER_ARCHIVES.map((item) => {
+  const plot = PLOTS.find((row) => row.id === item.plotId)
+  return {
+    ...item,
+    subjectId: item.subjectId || plot?.subjectId || '',
+    regionCode: item.regionCode || plot?.regionCode || ''
+  }
+}))
+export const addDisasterArchive = (record) => mockRequest(() => {
+  if (!record.occurrenceTime || !record.plotId || !record.regionCode || !record.disasterType || !record.crop) return failed('发生时间、关联地块、灾害类型和受灾作物不能为空')
+  if (Number(record.disasterArea) > Number(record.affectedArea) || Number(record.lostArea) > Number(record.disasterArea)) return failed('灾情面积数据不符合逻辑')
+  const item = { ...record, id: `DA-${String(DISASTER_ARCHIVES.length + 1).padStart(3, '0')}` }
+  DISASTER_ARCHIVES.unshift(item)
+  return success({ item })
+})
+export const updateDisasterArchive = (record) => mockRequest(() => {
+  const index = DISASTER_ARCHIVES.findIndex((item) => item.id === record.id)
+  if (index < 0) return failed('灾情档案不存在')
+  if (Number(record.disasterArea) > Number(record.affectedArea) || Number(record.lostArea) > Number(record.disasterArea)) return failed('灾情面积数据不符合逻辑')
+  DISASTER_ARCHIVES[index] = { ...DISASTER_ARCHIVES[index], ...record }
+  return success({ item: DISASTER_ARCHIVES[index] })
+})
+export const deleteDisasterArchive = (id) => mockRequest(() => {
+  const index = DISASTER_ARCHIVES.findIndex((item) => item.id === id)
+  if (index < 0) return failed('灾情档案不存在')
+  DISASTER_ARCHIVES.splice(index, 1)
+  return success()
 })
 
 const scopedRows = (rows, role) => rows.filter((item) => inRoleScope(item, role))
@@ -1274,7 +1499,14 @@ export const fetchSupervise = fetchPlanSupervise
 export const updateSupervise = followUpPlan
 export const fetchStats = fetchPlanStats
 
-export const fetchFarmServices = (role, filters = {}) => mockRequest(() => scopedRows(FARM_SERVICES, role).filter((item) => (!filters.keyword || `${item.title}${item.regionName}${item.crop}`.includes(filters.keyword)) && (!filters.type || item.type === filters.type) && (!filters.status || item.status === filters.status)))
+export const fetchFarmServices = (role, filters = {}) => mockRequest(() => FARM_SERVICES.filter((item) => {
+  if (!role) return false
+  if (role.subjectId) {
+    return item.regionCode === '340000' || String(role.regionCode || '').startsWith(String(item.regionCode || ''))
+  }
+  if (!role.regionCode || role.regionCode === '340000') return true
+  return String(item.regionCode || '').startsWith(String(role.regionCode)) || String(role.regionCode).startsWith(String(item.regionCode || ''))
+}).filter((item) => (!filters.keyword || `${item.title}${item.regionName}${item.crop}`.includes(filters.keyword)) && (!filters.type || item.type === filters.type) && (!filters.status || item.status === filters.status)))
 export const saveFarmService = (data) => mockRequest(() => {
   if (!data.title || !data.provider) return failed('服务标题和提供单位不能为空')
   const item = { id: data.id || `SERVICE-${String(FARM_SERVICES.length + 1).padStart(3, '0')}`, status: '待发布', pushCount: 0, ...data }

@@ -123,6 +123,35 @@ export const adjustRisk = (eventId, risk, reason) =>
   }, 300)
 
 // 数字围栏联动新增事件
+export const createSnapshotEvent = (payload, role) =>
+  mockRequest(() => {
+    if (!role?.subjectId) return { success: false, message: '仅种植主体可提交农情直报' }
+    if (!payload.type || !payload.desc || !payload.regionCode) return { success: false, message: '问题类型、问题描述和所在地区不能为空' }
+    const id = `EVT-2026-${String(FSR_EVENTS.length + 1).padStart(4, '0')}`
+    const now = new Date()
+    const time = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
+    FSR_EVENTS.unshift({
+      id,
+      code: id.replace('EVT-', 'FSR-'),
+      type: payload.type,
+      source: 'snapshot',
+      risk: payload.risk || 'medium',
+      regionCode: payload.regionCode,
+      regionName: payload.regionName || role.regionName,
+      spot: { plotId: payload.plotId || null, geometry: payload.geometry || null, center: payload.center || null, areaMu: Number(payload.areaMu || 0) },
+      subjectId: role.subjectId,
+      subjectName: role.unit,
+      foundTime: now.toISOString().slice(0, 10),
+      desc: payload.desc,
+      photos: payload.photos || [],
+      status: 'pending',
+      deadline: null,
+      taskId: null,
+      trail: [{ time, action: '农情直报提交', user: `${role.name}（皖企通）`, extra: `现场照片${(payload.photos || []).length}张` }]
+    })
+    return { success: true, id }
+  }, 600)
+
 export const createFenceEvent = (payload) =>
   mockRequest(() => {
     const id = `EVT-2026-${String(FSR_EVENTS.length + 1).padStart(4, '0')}`

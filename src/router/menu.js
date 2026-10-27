@@ -21,24 +21,19 @@ export const MENU_CONFIG = [
       // 计划编制与下达：制定 → 审核 → 下达
       { title: '种植计划制定', route: '/gpm/plan', icon: 'EditPen', section: '计划编制与下达', roles: ['province', 'city', 'county'] },
       { title: '种植计划审核', route: '/gpm/audit', icon: 'Stamp', section: '计划编制与下达', roles: ['province', 'city'] },
-      { title: '种植计划下达', route: '/gpm/decompose', icon: 'Share', section: '计划编制与下达', roles: ['province', 'city', 'county', 'town', 'subject'] },
+      { title: '种植计划下达', route: '/gpm/decompose', icon: 'Share', section: '计划编制与下达', roles: ['province', 'city', 'county', 'subject'] },
 
       // 计划落实与调度：落实 → 进度 → 监督 → 排名
-      { title: '计划落实·按图选地', route: '/gpm/implement', icon: 'MapLocation', section: '计划落实与调度', roles: ['county', 'town'] },
-      { title: '进度调度', route: '/gpm/progress', icon: 'DataLine', section: '计划落实与调度' },
-      { title: '种植计划监督', route: '/gpm/supervise', icon: 'Warning', section: '计划落实与调度', roles: ['province', 'city', 'county'] },
-      { title: '落实进度排行榜', route: '/gpm/rank', icon: 'Trophy', section: '计划落实与调度', roles: ['province', 'city', 'county'] },
+      { title: '播种进度调度', route: '/gpm/progress', icon: 'DataLine', section: '计划落实与调度', roles: ['province', 'city', 'county'] },
+      { title: '收获进度调度', route: '/gpm/harvest-progress', icon: 'TrendCharts', section: '计划落实与调度', roles: ['province', 'city', 'county'] },
+      { title: '种植统计分析', route: '/gpm/supervise', icon: 'DataAnalysis', section: '计划落实与调度', roles: ['province'] },
 
       // 服务保障
-      { title: '农事服务管理', route: '/gpm/farm-service', icon: 'Service', section: '服务保障' },
       { title: '惠农政策', route: '/gpm/policy', icon: 'Reading', section: '服务保障' },
-      { title: '防灾减灾', route: '/gpm/disaster', icon: 'Umbrella', section: '服务保障' },
-      { title: '离线填报同步', route: '/gpm/offline-sync', icon: 'Refresh', section: '服务保障' },
+      { title: '气象预警', route: '/gpm/disaster', icon: 'Umbrella', section: '服务保障' },
+      { title: '灾情档案', route: '/gpm/disaster-archive', icon: 'Document', section: '服务保障' },
 
       // 统计分析与一张图
-      { title: '计划管理统计', route: '/gpm/stats', icon: 'PieChart', section: '统计分析' },
-      { title: '粮食生产一张图', route: '/onemap/production', icon: 'Compass', section: '统计分析' },
-      { title: '粮食产业布局一张图', route: '/onemap/industry', icon: 'TrendCharts', section: '统计分析' }
     ]
   },
   {
@@ -82,6 +77,7 @@ export const MENU_CONFIG = [
     icon: 'Iphone',
     system: 'mobile',
     children: [
+      { title: '皖企通首页', route: '/mobile/wanqitong', icon: 'HomeFilled', roles: ['grower'] },
       { title: '皖政通·计划管理任务', route: '/mobile/check/list', icon: 'Iphone' },
       { title: '皖企通·主体填报', route: '/mobile/declare', icon: 'Tickets' },
       { title: '随手拍', route: '/mobile/snapshot', icon: 'Camera' }

@@ -3,8 +3,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function mockRequest(dataFn, min = 300, max = 700) {
   const ms = Math.floor(min + Math.random() * (max - min))
-  return delay(ms).then(() => {
-    const result = typeof dataFn === 'function' ? dataFn() : dataFn
-    return JSON.parse(JSON.stringify(result))
-  })
+  return delay(ms)
+    .then(() => (typeof dataFn === 'function' ? dataFn() : dataFn))
+    .then((result) => JSON.parse(JSON.stringify(result)))
 }

@@ -42,7 +42,12 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // 免登录切换演示角色（串场演示关键能力）
-  const switchRole = (roleCode) => login(roleCode)
+  const switchRole = (roleCode) => {
+    // #region debug-point D:store-switch
+    fetch('http://127.0.0.1:7777/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: 'role-switch-plan-issue', runId: 'pre', hypothesisId: 'D', location: 'user.js:45', msg: '[DEBUG] store role switch', data: { roleCode, beforeRole: role.value?.code, roleExists: !!findRole(roleCode) }, ts: Date.now() }) }).catch(() => {})
+    // #endregion
+    return login(roleCode)
+  }
 
   const logout = () => {
     role.value = null

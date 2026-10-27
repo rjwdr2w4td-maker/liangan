@@ -29,11 +29,9 @@ const routes = [
         path: 'onemap',
         meta: { subsystem: 'onemap' },
         children: [
-          { path: 'production', name: 'OnemapProduction', component: () => import('@/views/onemap/ProductionMap.vue'), meta: { title: '粮食生产一张图' } },
           { path: 'safety', name: 'OnemapSafety', component: () => import('@/views/onemap/SafetyMap.vue'), meta: { title: '粮食安全监测一张图' } },
           { path: 'silage', name: 'OnemapSilage', component: () => import('@/views/onemap/SilageMap.vue'), meta: { title: '青贮饲料一张图' } },
           { path: 'pesticide', name: 'OnemapPesticide', component: () => import('@/views/onemap/PesticideMap.vue'), meta: { title: '农药监管一张图' } },
-          { path: 'industry', name: 'OnemapIndustry', component: () => import('@/views/onemap/IndustryMap.vue'), meta: { title: '粮食产业布局一张图' } }
         ]
       },
 
@@ -46,15 +44,12 @@ const routes = [
           { path: 'subjects', name: 'GpmSubjects', component: () => import('@/views/gpm/Subjects.vue'), meta: { title: '种植主体管理', roles: ['province'] } },
           { path: 'plots', name: 'GpmPlots', component: () => import('@/views/gpm/Plots.vue'), meta: { title: '地块管理', roles: ['province'] } },
           { path: 'audit', name: 'GpmAudit', component: () => import('@/views/gpm/Audit.vue'), meta: { title: '种植计划审核', roles: ['province', 'city'] } },
-          { path: 'supervise', name: 'GpmSupervise', component: () => import('@/views/gpm/Supervise.vue'), meta: { title: '种植计划监督', roles: ['province', 'city', 'county'] } },
-          { path: 'stats', name: 'GpmStats', component: () => import('@/views/gpm/Stats.vue'), meta: { title: '计划管理统计' } },
-          { path: 'decompose', name: 'GpmDecompose', component: () => import('@/views/gpm/PlanDecompose.vue'), meta: { title: '种植计划下达', roles: ['province', 'city', 'county', 'town', 'subject'] } },
-          { path: 'farm-service', name: 'GpmFarmService', component: () => import('@/views/gpm/FarmService.vue'), meta: { title: '农事服务管理' } },
-          { path: 'offline-sync', name: 'GpmOfflineSync', component: () => import('@/views/gpm/OfflineSync.vue'), meta: { title: '离线填报同步' } },
-          { path: 'implement', name: 'GpmImplement', component: () => import('@/views/gpm/PlanImplement.vue'), meta: { title: '计划落实·按图选地', roles: ['county', 'town'] } },
-          { path: 'progress', name: 'GpmProgress', component: () => import('@/views/gpm/Progress.vue'), meta: { title: '进度调度' } },
-          { path: 'rank', name: 'GpmRank', component: () => import('@/views/gpm/RankBoard.vue'), meta: { title: '落实进度排行榜', roles: ['province', 'city', 'county'] } },
-          { path: 'disaster', name: 'GpmDisaster', component: () => import('@/views/gpm/Disaster.vue'), meta: { title: '防灾减灾' } },
+          { path: 'supervise', name: 'GpmSupervise', component: () => import('@/views/gpm/Stats.vue'), meta: { title: '种植统计分析', roles: ['province'] } },
+          { path: 'decompose', name: 'GpmDecompose', component: () => import('@/views/gpm/PlanDecompose.vue'), meta: { title: '种植计划下达', roles: ['province', 'city', 'county', 'subject'] } },
+          { path: 'progress', name: 'GpmProgress', component: () => import('@/views/gpm/Progress.vue'), meta: { title: '播种进度调度', roles: ['province', 'city', 'county'] } },
+          { path: 'harvest-progress', name: 'GpmHarvestProgress', component: () => import('@/views/gpm/HarvestProgress.vue'), meta: { title: '收获进度调度', roles: ['province', 'city', 'county'] } },
+          { path: 'disaster', name: 'GpmDisaster', component: () => import('@/views/gpm/Disaster.vue'), meta: { title: '气象预警' } },
+          { path: 'disaster-archive', name: 'GpmDisasterArchive', component: () => import('@/views/gpm/DisasterArchive.vue'), meta: { title: '灾情档案' } },
           { path: 'policy', name: 'GpmPolicy', component: () => import('@/views/gpm/Policy.vue'), meta: { title: '惠农政策' } }
         ]
       },
@@ -101,7 +96,9 @@ const routes = [
   // ===== 移动端演示（独立手机壳布局，不走 Layout）=====
   {
     path: '/mobile',
+    component: () => import('@/components/layout/MobileLayout.vue'),
     children: [
+      { path: 'wanqitong', name: 'MobileWanqitong', component: () => import('@/views/mobile/WanqitongHome.vue'), meta: { title: '皖企通' } },
       { path: 'check/list', name: 'MobileCheckList', component: () => import('@/views/mobile/CheckTask.vue'), meta: { title: '皖政通·计划管理任务' } },
       { path: 'declare', name: 'MobileDeclare', component: () => import('@/views/mobile/DeclareForm.vue'), meta: { title: '皖企通·主体填报' } },
       { path: 'snapshot', name: 'MobileSnapshot', component: () => import('@/views/mobile/SnapReport.vue'), meta: { title: '随手拍' } }

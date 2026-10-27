@@ -1,16 +1,21 @@
 <template>
-  <div class="mobile-page">
+  <div class="mobile-shell">
     <div class="phone-wrap">
-      <slot />
+      <div class="phone-content">
+        <router-view />
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.mobile-page {
+.mobile-shell {
+  width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background:
     radial-gradient(1200px 500px at 20% -10%, rgba(15, 94, 181, 0.12), transparent),
@@ -23,6 +28,9 @@
 .phone-wrap {
   width: 390px;
   height: 780px;
+  max-width: none;
+  max-height: none;
+  box-sizing: border-box;
   border-radius: 44px;
   border: 10px solid #1a2332;
   box-shadow:
@@ -35,4 +43,23 @@
   flex-direction: column;
   flex-shrink: 0;
 }
+
+.phone-content {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.phone-content > :deep(.mobile-page) {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
 </style>

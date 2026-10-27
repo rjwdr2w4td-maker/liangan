@@ -34,17 +34,6 @@ export const DEMO_ROLES = [
     avatarColor: '#0f5eb5'
   },
   {
-    code: 'town',
-    name: '赵磊',
-    unit: '太和县旧县镇人民政府',
-    roleName: '乡镇管理人员',
-    regionCode: '341222104',
-    regionName: '旧县镇',
-    subjectId: null,
-    homeRoute: '/portal',
-    avatarColor: '#2e7d5b'
-  },
-  {
     code: 'grower',
     name: '陈勇',
     unit: '太和县丰乐种植专业合作社',
@@ -52,7 +41,7 @@ export const DEMO_ROLES = [
     regionCode: '341222',
     regionName: '太和县',
     subjectId: 'SUB-0001',
-    homeRoute: '/portal',
+    homeRoute: '/mobile/wanqitong',
     avatarColor: '#6a4fa3'
   },
   {
@@ -63,7 +52,7 @@ export const DEMO_ROLES = [
     regionCode: '341222',
     regionName: '太和县',
     subjectId: 'PES-S-0012',
-    homeRoute: '/portal',
+    homeRoute: '/mobile/wanqitong',
     avatarColor: '#c2571a'
   }
 ]

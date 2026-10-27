@@ -79,6 +79,9 @@ const doLogin = () => {
 }
 
 const quickLogin = (code) => {
+  // #region debug-point D:quick-login
+  fetch('http://127.0.0.1:7777/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: 'role-switch-plan-issue', runId: 'pre', hypothesisId: 'D', location: 'Login.vue:81', msg: '[DEBUG] quick login entered', data: { code }, ts: Date.now() }) }).catch(() => {})
+  // #endregion
   userStore.login(code)
   ElMessage.success(`欢迎，${userStore.role.roleName} ${userStore.role.name}`)
   router.push('/entry')

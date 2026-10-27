@@ -179,11 +179,18 @@ const onSearch = () => {
 }
 
 const chooseRole = (code) => {
-  userStore.switchRole(code)
+  // #region debug-point D:role-switch
+  fetch('http://127.0.0.1:7777/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: 'role-switch-plan-issue', runId: 'pre', hypothesisId: 'D', location: 'WztShell.vue:181', msg: '[DEBUG] role switch entered', data: { code, beforeRole: userStore.role?.code }, ts: Date.now() }) }).catch(() => {})
+  // #endregion
+  const switched = userStore.switchRole(code)
+  if (!switched) {
+    ElMessage.error('角色切换失败')
+    return
+  }
   roleDialogVisible.value = false
   ElMessage.success(`已切换为「${userStore.role.roleName}」`)
-  // 切换角色后权限变化，回到统一入口重新选择系统
-  router.push('/entry')
+  // 皖企通主体切换后直接进入移动端首页，管理角色仍回到统一入口
+  router.push(userStore.role?.subjectId ? '/mobile/wanqitong' : '/entry')
 }
 
 const onOrgCommand = (cmd) => {

@@ -112,6 +112,111 @@ export const TOWN_PLANS = [
   { id: 'PLAN-2026-341222101', year: 2026, townCode: '341222101', townName: '城关镇', countyCode: '341222', totalArea: 58, wheat: 26, rice: 6, corn: 18, soybean: 8, status: 'issued', implementRate: 81, sowRate: 88, harvestRate: 54 }
 ]
 
+const definedTownCodes = new Set(TOWN_PLANS.map(item => item.townCode))
+const ALL_TOWN_PLANS = COUNTY_PLANS.flatMap((county) => {
+  const children = getRegion(county.countyCode)?.children || []
+  const missing = children.filter(town => !definedTownCodes.has(town.code))
+  return missing.map((town, index) => {
+    const count = missing.length || 1
+    return {
+      id: `PLAN-2026-${town.code}`,
+      year: county.year,
+      townCode: town.code,
+      townName: town.name,
+      countyCode: county.countyCode,
+      totalArea: Number((county.totalArea / count).toFixed(1)),
+      wheat: Number((county.wheat / count).toFixed(1)),
+      rice: Number((county.rice / count).toFixed(1)),
+      corn: Number((county.corn / count).toFixed(1)),
+      soybean: Number((county.soybean / count).toFixed(1)),
+      status: index % 2 ? 'issued' : 'implementing'
+    }
+  })
+})
+const SOWING_TOWN_PLANS = [...TOWN_PLANS, ...ALL_TOWN_PLANS]
+
+const sowingCropKeys = ['wheat', 'rice', 'corn', 'soybean']
+const sowingRowsFromPlans = (plans, level) => plans.flatMap((plan) => sowingCropKeys.map((crop, index) => {
+  const planArea = Number(plan[crop] || 0)
+  const sownArea = Number((planArea * (0.58 + ((index + String(plan.id).length) % 25) / 100)).toFixed(1))
+  const regionCode = level === 'city' ? plan.cityCode : level === 'county' ? plan.countyCode : plan.townCode
+  const regionName = level === 'city' ? plan.cityName : level === 'county' ? plan.countyName : plan.townName
+  return {
+    id: `SOW-${level}-${regionCode}-${crop}`,
+    year: plan.year,
+    level,
+    regionCode,
+    regionName,
+    cityCode: plan.cityCode || (level === 'city' ? plan.cityCode : String(plan.countyCode || '').slice(0, 4) + '00'),
+    countyCode: plan.countyCode || (level === 'county' ? plan.countyCode : ''),
+    townCode: plan.townCode || (level === 'town' ? plan.townCode : ''),
+    crop,
+    planArea,
+    sownArea,
+    updatedAt: '2026-10-20'
+  }
+}))
+
+const sowingSubjectRows = () => GROW_SUBJECTS.flatMap((subject, subjectIndex) => {
+  const townPlans = SOWING_TOWN_PLANS.filter(plan => plan.countyCode === subject.regionCode || plan.townCode === subject.regionCode)
+  const countyPlan = COUNTY_PLANS.find(plan => plan.countyCode === subject.regionCode)
+  const townPlan = townPlans[subjectIndex % Math.max(townPlans.length, 1)] || (countyPlan ? {
+    ...countyPlan,
+    townCode: countyPlan.countyCode,
+    townName: countyPlan.countyName
+  } : null)
+  if (!townPlan) return []
+  const sourceRows = sowingRowsFromPlans([townPlan], 'town')
+  const subjectsInRegion = GROW_SUBJECTS.filter(item => item.regionCode === subject.regionCode)
+  const totalArea = subjectsInRegion.reduce((sum, item) => sum + Number(item.area || 0), 0)
+  const ratio = totalArea ? Number(subject.area || 0) / totalArea : 0
+  return sourceRows.map(row => ({
+    ...row,
+    id: `SOW-subject-${subject.id}-${row.crop}`,
+    level: 'subject',
+    regionCode: townPlan.townCode,
+    regionName: townPlan.townName,
+    subjectId: subject.id,
+    subjectName: subject.name,
+    planArea: Number((row.planArea * ratio).toFixed(1)),
+    sownArea: Number((row.sownArea * ratio).toFixed(1))
+  }))
+})
+
+const CURRENT_SOWING_PROGRESS_ROWS = [
+  ...sowingRowsFromPlans(CITY_PLANS, 'city'),
+  ...sowingRowsFromPlans(COUNTY_PLANS, 'county'),
+  ...sowingRowsFromPlans(SOWING_TOWN_PLANS, 'town'),
+  ...sowingSubjectRows()
+]
+
+export const SOWING_PROGRESS_ROWS = [
+  ...CURRENT_SOWING_PROGRESS_ROWS,
+  ...CURRENT_SOWING_PROGRESS_ROWS.map((row) => ({
+    ...row,
+    id: row.id.replace('SOW-', 'SOW-2025-'),
+    year: 2025,
+    planArea: Number((Number(row.planArea || 0) * 0.94).toFixed(1)),
+    sownArea: Number((Number(row.sownArea || 0) * 0.91).toFixed(1)),
+    updatedAt: '2025-10-22'
+  })),
+  ...CURRENT_SOWING_PROGRESS_ROWS.map((row) => ({
+    ...row,
+    id: row.id.replace('SOW-', 'SOW-2024-'),
+    year: 2024,
+    planArea: Number((Number(row.planArea || 0) * 0.88).toFixed(1)),
+    sownArea: Number((Number(row.sownArea || 0) * 0.86).toFixed(1)),
+    updatedAt: '2024-10-22'
+  }))
+]
+
+export const HARVEST_PROGRESS_ROWS = SOWING_PROGRESS_ROWS.map((row, index) => ({
+  ...row,
+  id: row.id.replace('SOW-', 'HARVEST-'),
+  harvestedArea: Number((Number(row.sownArea || 0) * (0.42 + (index % 19) / 100)).toFixed(1)),
+  updatedAt: '2026-10-22'
+}))
+
 // 历史省级计划及下级任务分解演示数据
 export const PLAN_HISTORY = [
   {
@@ -281,15 +386,21 @@ export const POLICIES = [
 ]
 
 export const WEATHER_ALERTS = [
-  { id: 'WA-001', type: '暴雨', level: '橙色', region: '阜阳市', regionCode: '341200', content: '预计未来24小时阜阳大部有大到暴雨，局部大暴雨，请注意防范农田渍涝。', publishTime: '2026-09-28 16:00', crops: '玉米、大豆', status: 'active' },
-  { id: 'WA-002', type: '大风', level: '黄色', region: '亳州市', regionCode: '341600', content: '预计未来12小时平均风力可达6级以上，阵风7-8级，秋收作业请注意安全。', publishTime: '2026-09-28 10:30', crops: '玉米', status: 'active' },
-  { id: 'WA-003', type: '寒潮', level: '蓝色', region: '全省', regionCode: '340000', content: '10月2日起全省自北向南平均气温下降6-8℃，请防范晚秋作物低温冷害。', publishTime: '2026-09-27 09:00', crops: '水稻', status: 'active' }
+  { id: 'WA-001', kind: 'warning', type: '暴雨', level: '橙色', regionName: '太和县', region: '太和县', regionCode: '341222', content: '预计未来24小时太和县有大到暴雨，局部大暴雨，请注意防范农田渍涝。', advice: '及时疏通沟渠，做好田间排水。', publishTime: '2026-09-28 16:00', crops: '玉米、大豆', status: 'active', source: '气象部门' },
+  { id: 'WA-002', kind: 'forecast', type: '大风', level: '黄色', regionName: '涡阳县', region: '涡阳县', regionCode: '341622', content: '预计未来12小时涡阳县平均风力可达6级以上，阵风7-8级，秋收作业请注意安全。', advice: '暂停高空和露天农事作业，加固农业设施。', publishTime: '2026-09-28 10:30', crops: '玉米', status: 'active', source: '气象部门' },
+  { id: 'WA-003', kind: 'warning', type: '寒潮', level: '蓝色', regionName: '全省', region: '全省', regionCode: '340000', content: '10月2日起全省自北向南平均气温下降6-8℃，请防范晚秋作物低温冷害。', advice: '加强田间巡查，做好保温和防冻措施。', publishTime: '2026-09-27 09:00', crops: '水稻', status: 'active', source: '气象部门' }
 ]
 
 export const DISASTERS = [
   { id: 'DIS-001', type: '风雹', region: '太和县旧县镇', regionCode: '341222104', date: '2026-08-15', crop: '玉米', affectedArea: 1850, disasterArea: 620, lostArea: 180, estLoss: '约86万元', status: '已处置', description: '短时大风冰雹造成部分玉米倒伏和叶片损伤。', materials: 3 },
   { id: 'DIS-002', type: '渍涝', region: '涡阳县', regionCode: '341622', date: '2026-07-28', crop: '玉米', affectedArea: 3200, disasterArea: 1200, lostArea: 350, estLoss: '约210万元', status: '处置中', description: '连续强降雨导致低洼田块积水，已组织机排。', materials: 5 },
   { id: 'DIS-003', type: '干旱', region: '长丰县', regionCode: '340121', date: '2026-07-05', crop: '水稻', affectedArea: 2600, disasterArea: 800, lostArea: 120, estLoss: '约95万元', status: '已处置', description: '阶段性高温少雨影响水稻分蘖，已调度水源灌溉。', materials: 4 }
+]
+
+export const DISASTER_ARCHIVES = [
+  { id: 'DA-001', occurrenceTime: '2026-08-15 08:30', plotId: 'PL-0007', subjectId: 'SUB-0004', subjectName: '旧县镇赵多种植大户', owner: '赵磊', plotName: '旧县镇东42号地块', locationName: '太和县旧县镇', regionCode: '341222104', disasterType: '风雹', crop: '玉米', affectedArea: 1850, disasterArea: 620, lostArea: 180, estimatedYieldLoss: 129, description: '短时大风冰雹造成玉米倒伏和叶片损伤。', images: [{ url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=realistic%20agricultural%20field%20with%20hailstorm%20damage%20and%20fallen%20corn%20plants%2C%20documentary%20photo&image_size=landscape_4_3', name: '风雹受灾现场' }, { url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=realistic%20close-up%20of%20damaged%20corn%20leaves%20after%20hailstorm%2C%20agricultural%20disaster%20record%20photo&image_size=landscape_4_3', name: '玉米受灾情况' }] },
+  { id: 'DA-002', occurrenceTime: '2026-07-28 14:00', plotId: 'PL-0020', subjectId: 'SUB-0007', subjectName: '涡阳县丰收种植合作社', owner: '马丰', plotName: '涡阳县东42号地块', locationName: '涡阳县', regionCode: '341622', disasterType: '暴雨洪涝', crop: '玉米', affectedArea: 3200, disasterArea: 1200, lostArea: 350, estimatedYieldLoss: 315, description: '连续强降雨导致低洼田块积水。', images: [{ url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=realistic%20flooded%20corn%20field%20after%20heavy%20rain%2C%20agricultural%20disaster%20record%20photo&image_size=landscape_4_3', name: '暴雨受灾现场' }] },
+  { id: 'DA-003', occurrenceTime: '2026-07-05 10:20', plotId: 'PL-0026', subjectId: 'SUB-0009', subjectName: '肥西县三河现代农业公司', owner: '张三河', plotName: '肥西县三河镇现代农业地块', locationName: '肥西县三河镇', regionCode: '340123101', disasterType: '干旱', crop: '水稻', affectedArea: 2600, disasterArea: 800, lostArea: 120, estimatedYieldLoss: 142, description: '阶段性高温少雨影响水稻分蘖。', images: [{ url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=realistic%20dry%20rice%20field%20with%20heat%20and%20drought%20damage%2C%20agricultural%20disaster%20record%20photo&image_size=landscape_4_3', name: '干旱受灾现场' }] }
 ]
 
 export const RESCUE_ACTIONS = [
