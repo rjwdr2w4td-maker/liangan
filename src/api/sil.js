@@ -6,7 +6,8 @@ const filterByRole = (list, role, subjectField = 'subjectId') => {
   if (!role) return []
   if (role.subjectId) return list.filter((i) => i[subjectField] === role.subjectId)
   if (role.regionCode === '340000') return list
-  return list.filter((i) => String(i.regionCode || '').startsWith(role.regionCode))
+  const prefix = role.code === 'city' ? String(role.regionCode).slice(0, 4) : String(role.regionCode || '')
+  return prefix ? list.filter((i) => String(i.regionCode || '').startsWith(prefix)) : []
 }
 
 // ===== 申报 =====

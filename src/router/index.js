@@ -22,8 +22,6 @@ const routes = [
     component: Layout,
     redirect: '/entry',
     children: [
-      { path: 'portal', name: 'Portal', component: () => import('@/views/portal/Portal.vue'), meta: { title: '统一门户工作台', subsystem: 'portal' } },
-
       // ===== 专项一张图 =====
       {
         path: 'onemap',
@@ -99,9 +97,18 @@ const routes = [
     component: () => import('@/components/layout/MobileLayout.vue'),
     children: [
       { path: 'wanqitong', name: 'MobileWanqitong', component: () => import('@/views/mobile/WanqitongHome.vue'), meta: { title: '皖企通' } },
+      { path: 'wanzhengtong', name: 'MobileWanzhengtong', component: () => import('@/views/mobile/WanzhengtongHome.vue'), meta: { title: '皖政通' } },
+      { path: 'wzt-gpm', name: 'MobileWztGpm', component: () => import('@/views/mobile/WanzhengtongGpm.vue'), meta: { title: '皖政通·粮食计划管理' } },
+      { path: 'wzt-progress', name: 'MobileWztProgress', component: () => import('@/views/mobile/WanzhengtongProgress.vue'), meta: { title: '皖政通·进度填报' } },
+      { path: 'wzt-policies', name: 'MobileWztPolicies', component: () => import('@/views/mobile/WanzhengtongPolicies.vue'), meta: { title: '皖政通·惠农政策' } },
+      { path: 'wzt-disaster', name: 'MobileWztDisaster', component: () => import('@/views/mobile/WanzhengtongDisaster.vue'), meta: { title: '皖政通·灾情上报' } },
+      { path: 'gpm', name: 'MobileGpm', component: () => import('@/views/mobile/GpmMobileHome.vue'), meta: { title: '粮食计划管理' } },
+      { path: 'plans', name: 'MobilePlans', component: () => import('@/views/mobile/PlanList.vue'), meta: { title: '计划列表' } },
+      { path: 'progress', name: 'MobileProgress', component: () => import('@/views/mobile/ProgressList.vue'), meta: { title: '播种与收获' } },
+      { path: 'policies', name: 'MobilePolicies', component: () => import('@/views/mobile/PolicyList.vue'), meta: { title: '惠农政策' } },
+      { path: 'snapshot', name: 'MobileSnapshot', component: () => import('@/views/mobile/SnapReport.vue'), meta: { title: '灾情上报' } },
       { path: 'check/list', name: 'MobileCheckList', component: () => import('@/views/mobile/CheckTask.vue'), meta: { title: '皖政通·计划管理任务' } },
-      { path: 'declare', name: 'MobileDeclare', component: () => import('@/views/mobile/DeclareForm.vue'), meta: { title: '皖企通·主体填报' } },
-      { path: 'snapshot', name: 'MobileSnapshot', component: () => import('@/views/mobile/SnapReport.vue'), meta: { title: '随手拍' } }
+      { path: 'declare', name: 'MobileDeclare', component: () => import('@/views/mobile/DeclareForm.vue'), meta: { title: '皖企通·主体填报' } }
     ]
   },
   { path: '/:pathMatch(.*)*', redirect: '/entry' }

@@ -29,14 +29,23 @@ const progressTaskRows = (role) => TASK_PATH_DETAILS.filter((task) => {
   if (role?.subjectId) return task.subjectId === role.subjectId
   if (!role?.regionCode || role.regionCode === '340000') return true
   return String(task.countyCode || '').startsWith(String(role.regionCode)) || String(task.townCode || '').startsWith(String(role.regionCode))
-}).map((task) => ({
-  ...task,
-  planId: progressPlanId(task),
-  taskId: task.id,
-  planName: task.planName,
-  taskAreaMu: Number(task.taskArea || 0),
-  status: task.status || '已下达'
-}))
+}).map((task) => {
+  const records = PROGRESS_RECORDS.filter((record) => record.taskId === task.id)
+  const sowArea = records.filter((record) => record.type === 'sow').reduce((sum, record) => sum + Number(record.area || 0), 0)
+  const harvestArea = records.filter((record) => record.type === 'harvest').reduce((sum, record) => sum + Number(record.area || 0), 0)
+  const taskAreaMu = Number(task.taskArea || 0)
+  return {
+    ...task,
+    planId: progressPlanId(task),
+    taskId: task.id,
+    planName: task.planName,
+    taskAreaMu,
+    sowArea,
+    harvestArea,
+    progress: taskAreaMu ? Number((Math.max(sowArea, harvestArea) / taskAreaMu * 100).toFixed(1)) : 0,
+    status: task.status || '已下达'
+  }
+})
 const planTarget = (level) => level === 'city' ? CITY_PLANS : level === 'county' ? COUNTY_PLANS : level === 'town' ? TOWN_PLANS : null
 const roleLevel = (role) => role?.code === 'province' ? 'province' : role?.code === 'city' ? 'city' : role?.code === 'county' ? 'county' : role?.code === 'town' ? 'town' : 'subject'
 const childLevel = (role) => roleLevel(role) === 'province' ? 'city' : roleLevel(role) === 'city' ? 'county' : roleLevel(role) === 'county' ? 'town' : null

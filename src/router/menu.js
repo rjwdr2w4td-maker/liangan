@@ -4,12 +4,6 @@ import { useUserStore } from '@/stores/user'
 
 export const MENU_CONFIG = [
   {
-    title: '工作台',
-    icon: 'Monitor',
-    route: '/portal',
-    system: 'portal'
-  },
-  {
     title: '粮食计划管理',
     icon: 'DataAnalysis',
     system: 'gpm',
@@ -108,7 +102,6 @@ export function getMenusForSystem(system) {
 
 // 根据路由判断当前所在子系统（一张图按业务归属返回对应系统）
 export function getSystemForRoute(path) {
-  if (path.startsWith('/portal')) return 'portal'
   for (const group of MENU_CONFIG) {
     if (group.route === path) return group.system
     if (group.children?.some((c) => c.route === path)) return group.system
@@ -117,7 +110,11 @@ export function getSystemForRoute(path) {
   if (path.startsWith('/sil/')) return 'sil'
   if (path.startsWith('/fsr/')) return 'fsr'
   if (path.startsWith('/pes/')) return 'pes'
-  return 'portal'
+  if (path.startsWith('/onemap/silage')) return 'sil'
+  if (path.startsWith('/onemap/safety')) return 'fsr'
+  if (path.startsWith('/onemap/pesticide')) return 'pes'
+  if (path.startsWith('/mobile/')) return 'mobile'
+  return 'gpm'
 }
 
 // 子系统显示名称（供头部标识等使用）

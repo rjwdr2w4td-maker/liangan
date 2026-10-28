@@ -1,4 +1,4 @@
-// 演示角色定义：6 个角色覆盖省/市/县/乡/种植主体/农药经营主体
+// 演示角色定义：5 个角色覆盖省/市/县/皖政通/种植主体
 export const DEMO_ROLES = [
   {
     code: 'province',
@@ -8,7 +8,7 @@ export const DEMO_ROLES = [
     regionCode: '340000',
     regionName: '安徽省',
     subjectId: null,
-    homeRoute: '/portal',
+    homeRoute: '/entry',
     avatarColor: '#b03a3a'
   },
   {
@@ -19,7 +19,7 @@ export const DEMO_ROLES = [
     regionCode: '341200',
     regionName: '阜阳市',
     subjectId: null,
-    homeRoute: '/portal',
+    homeRoute: '/entry',
     avatarColor: '#8a6d3b'
   },
   {
@@ -30,8 +30,19 @@ export const DEMO_ROLES = [
     regionCode: '341222',
     regionName: '太和县',
     subjectId: null,
-    homeRoute: '/portal',
+    homeRoute: '/entry',
     avatarColor: '#0f5eb5'
+  },
+  {
+    code: 'wanzhengtong',
+    name: '王芳',
+    unit: '太和县农业农村局',
+    roleName: '县级管理人员（皖政通）',
+    regionCode: '341222',
+    regionName: '安徽省/阜阳市/太和县',
+    subjectId: null,
+    homeRoute: '/mobile/wanzhengtong',
+    avatarColor: '#1668dc'
   },
   {
     code: 'grower',
@@ -44,17 +55,6 @@ export const DEMO_ROLES = [
     homeRoute: '/mobile/wanqitong',
     avatarColor: '#6a4fa3'
   },
-  {
-    code: 'pesticide',
-    name: '刘敏',
-    unit: '太和县皖丰农资经营部',
-    roleName: '农药经营主体（皖企通）',
-    regionCode: '341222',
-    regionName: '太和县',
-    subjectId: 'PES-S-0012',
-    homeRoute: '/mobile/wanqitong',
-    avatarColor: '#c2571a'
-  }
 ]
 
 export const findRole = (code) => DEMO_ROLES.find((r) => r.code === code)

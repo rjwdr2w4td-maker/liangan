@@ -26,8 +26,8 @@
         <div class="side-item" @click="onSetting">
           <el-icon :size="18"><Setting /></el-icon><span>设置</span>
         </div>
-        <div class="side-item" @click="go('/portal')">
-          <el-icon :size="18"><Monitor /></el-icon><span>工作台</span>
+        <div class="side-item" @click="go('/entry')">
+          <el-icon :size="18"><Monitor /></el-icon><span>首页</span>
         </div>
         <div class="side-item" @click="logout">
           <el-icon :size="18"><SwitchButton /></el-icon><span>退出</span>
@@ -77,8 +77,8 @@
                 <el-dropdown-item disabled>
                   <el-icon><Location /></el-icon>数据范围：{{ userStore.regionPath }}
                 </el-dropdown-item>
-                <el-dropdown-item command="portal">
-                  <el-icon><Monitor /></el-icon>门户工作台
+                <el-dropdown-item command="entry">
+                  <el-icon><Monitor /></el-icon>统一入口
                 </el-dropdown-item>
                 <el-dropdown-item command="switchRole">
                   <el-icon><Switch /></el-icon>切换演示角色
@@ -189,12 +189,11 @@ const chooseRole = (code) => {
   }
   roleDialogVisible.value = false
   ElMessage.success(`已切换为「${userStore.role.roleName}」`)
-  // 皖企通主体切换后直接进入移动端首页，管理角色仍回到统一入口
-  router.push(userStore.role?.subjectId ? '/mobile/wanqitong' : '/entry')
+  router.push(userStore.role?.homeRoute || '/entry')
 }
 
 const onOrgCommand = (cmd) => {
-  if (cmd === 'portal') go('/portal')
+  if (cmd === 'entry') go('/entry')
   if (cmd === 'switchRole') roleDialogVisible.value = true
   if (cmd === 'logout') logout()
 }

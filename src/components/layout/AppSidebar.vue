@@ -78,7 +78,7 @@ const activeMenu = computed(() => route.path)
 const currentSystem = computed(() => getSystemForRoute(route.path))
 const menus = computed(() => getMenusForRole())
 const systemGroup = computed(() => {
-  if (currentSystem.value === 'portal') return null
+  if (currentSystem.value === 'portal') return []
   const groups = getMenusForSystem(currentSystem.value)
   return groups[0] || null
 })

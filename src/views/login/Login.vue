@@ -84,7 +84,7 @@ const quickLogin = (code) => {
   // #endregion
   userStore.login(code)
   ElMessage.success(`欢迎，${userStore.role.roleName} ${userStore.role.name}`)
-  router.push('/entry')
+  router.push(userStore.role?.homeRoute || '/entry')
 }
 </script>
 
