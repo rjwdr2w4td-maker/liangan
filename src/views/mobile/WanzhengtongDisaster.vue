@@ -19,14 +19,13 @@
       <div class="actions"><el-button @click="saveDraft">暂存草稿</el-button><el-button type="primary" @click="submit">提交农情直报</el-button></div>
     </section>
     <section class="disaster-card">
-      <div class="section-title"><b>我的上报记录</b><el-button link type="primary" @click="load">刷新</el-button></div>
-      <el-radio-group v-model="tab" size="small" class="record-tabs"><el-radio-button label="全部" /><el-radio-button label="处理中" /><el-radio-button label="已办结" /></el-radio-group>
-      <div v-for="item in filteredDisasters" :key="item.id" class="disaster-row" @click="view(item)"><div class="row-top"><el-tag size="small" :type="statusType(item.status)">{{ item.status || '待核实' }}</el-tag><span>{{ item.foundTime || item.createdAt || '最新' }}</span></div><b>{{ issueLabel(item.type) }}</b><p>{{ item.subjectName || '未关联主体' }} · {{ item.plotName || '未关联地块' }}</p><p>{{ item.regionName || item.regionCode }} · {{ item.description || item.desc || '暂无描述' }}</p><div class="row-bottom">编号 {{ item.id }} <span>查看上报进度 ›</span></div></div>
-      <el-empty v-if="!filteredDisasters.length" description="暂无上报记录" />
+      <div class="section-title"><b>我的上报记录</b><span class="record-count">共 {{ disasters.length }} 条</span><el-button link type="primary" @click="load">刷新</el-button></div>
+      <div v-for="item in disasters" :key="item.id" class="disaster-row" @click="view(item)"><div class="row-top"><span>{{ item.foundTime || item.createdAt || '最新' }}</span></div><b>{{ issueLabel(item.type) }}</b><p>{{ item.subjectName || '未关联主体' }} · {{ item.plotName || '未关联地块' }}</p><p>{{ item.regionName || item.regionCode }} · {{ item.description || item.desc || '暂无描述' }}</p><div class="row-bottom">编号 {{ item.id }} <span>查看上报详情 ›</span></div></div>
+      <el-empty v-if="!disasters.length" description="暂无上报记录" />
     </section>
     <el-dialog v-model="detailVisible" title="我的上报记录详情" width="92%">
       <template v-if="active">
-        <el-descriptions :column="1" border><el-descriptions-item label="问题类型">{{ issueLabel(active.type) }}</el-descriptions-item><el-descriptions-item label="经营主体">{{ active.subjectName || '未关联' }}</el-descriptions-item><el-descriptions-item label="关联地块">{{ active.plotName || '未关联' }}</el-descriptions-item><el-descriptions-item label="发生地区">{{ active.regionName || active.regionCode }}</el-descriptions-item><el-descriptions-item label="当前状态"><el-tag :type="statusType(active.status)">{{ active.status }}</el-tag></el-descriptions-item><el-descriptions-item label="上报描述">{{ active.description || active.desc || '暂无' }}</el-descriptions-item></el-descriptions>
+        <el-descriptions :column="1" border><el-descriptions-item label="问题类型">{{ issueLabel(active.type) }}</el-descriptions-item><el-descriptions-item label="经营主体">{{ active.subjectName || '未关联' }}</el-descriptions-item><el-descriptions-item label="关联地块">{{ active.plotName || '未关联' }}</el-descriptions-item><el-descriptions-item label="发生地区">{{ active.regionName || active.regionCode }}</el-descriptions-item><el-descriptions-item label="上报描述">{{ active.description || active.desc || '暂无' }}</el-descriptions-item></el-descriptions>
         <div class="timeline-title">处置记录</div><div v-for="item in actions" :key="item.id" class="action-row"><b>{{ item.action }}</b><span>{{ item.unit }} · {{ item.time || item.createdAt || '已记录' }}</span></div><el-empty v-if="!actions.length" description="暂无处置记录" />
       </template>
     </el-dialog>
@@ -45,7 +44,6 @@ const disasterTypes = [{ label: '重大病虫害', value: 'pest' }, { label: '�
 const regionOptions = [{ value: '阜阳市', label: '阜阳市', children: [{ value: '太和县', label: '太和县', children: [{ value: '旧县镇', label: '旧县镇' }, { value: '大新镇', label: '大新镇' }] }] }]
 const disasters = ref([])
 const actions = ref([])
-const tab = ref('全部')
 const subjects = ref([])
 const active = ref(null)
 const detailVisible = ref(false)
@@ -53,11 +51,9 @@ const reportCard = ref(null)
 const form = reactive({ type: 'pest', subjectId: '', plotId: '', region: ['阜阳市', '太和县', '旧县镇'], location: '安徽省太和县（定位待更新）', description: '', photos: [] })
 const subjectPlots = computed(() => PLOTS.filter(item => item.subjectId === form.subjectId))
 const issueLabel = item => disasterTypes.find(type => type.value === item)?.label || item
-const filteredDisasters = computed(() => disasters.value.filter(item => tab.value === '全部' || item.status === tab.value))
 const load = async () => {
   disasters.value = await fetchDisasters(userStore.role) || []
 }
-const statusType = status => status === '已办结' || status === '已处置' ? 'success' : status === '处置中' ? 'warning' : 'danger'
 const fillDisaster = () => reportCard.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 const locate = () => {
   if (!navigator.geolocation) {
@@ -104,5 +100,5 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-.mobile-page{width:100%;min-height:100%;box-sizing:border-box;background:#f5f7fa;padding:14px}.mobile-head,.report-card,.disaster-card{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px}.mobile-head{display:flex;align-items:center;gap:8px;color:#1f3c68}.mobile-head b{display:block;font-size:19px}.mobile-head span{display:block;color:#667085;font-size:12px;margin-top:4px}.back-button{border:0;background:none;font-size:36px;line-height:1;padding:0 8px 4px 0}.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;color:#243b5a}.record-tabs{margin-bottom:8px}.disaster-row{border-top:1px solid #edf0f5;padding:12px 0}.disaster-row>b{font-size:13px;color:#344054}.disaster-row p{font-size:12px;color:#667085;line-height:1.5;margin:4px 0}.row-top,.row-bottom{font-size:11px;color:#98a2b3;display:flex;align-items:center;justify-content:space-between}.row-bottom span{color:#2d8c72}.disaster-row{cursor:pointer}.photos{display:flex;gap:8px;flex-wrap:wrap}.photo,.add-photo{width:68px;height:68px;border-radius:8px}.photo{position:relative;overflow:hidden;background:#eaf2fb}.photo img{width:100%;height:100%;object-fit:cover}.photo i{position:absolute;right:3px;top:0;color:#fff;font-style:normal;background:#0008;border-radius:50%;width:18px;height:18px;text-align:center;cursor:pointer}.add-photo{display:flex;align-items:center;justify-content:center;border:1px dashed #b7cbe1;color:#3c78b5;font-size:12px;text-align:center;cursor:pointer}.add-photo input{display:none}.actions{display:flex;justify-content:flex-end}.timeline-title{font-weight:600;color:#243b5a;margin:18px 0 8px}.action-row{border-left:2px solid #2d8c72;padding:2px 0 8px 10px;margin-left:4px}.action-row b,.action-row span{display:block;font-size:12px}.action-row span{color:#98a2b3;margin-top:4px}.mobile-page :deep(.el-form-item){margin-bottom:13px}
+.mobile-page{width:100%;min-height:100%;box-sizing:border-box;background:#f5f7fa;padding:14px}.mobile-head,.report-card,.disaster-card{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px}.mobile-head{display:flex;align-items:center;gap:8px;color:#1f3c68}.mobile-head b{display:block;font-size:19px}.mobile-head span{display:block;color:#667085;font-size:12px;margin-top:4px}.back-button{border:0;background:none;font-size:36px;line-height:1;padding:0 8px 4px 0}.section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;color:#243b5a}.record-count{color:#98a2b3;font-size:12px;margin-left:auto;margin-right:8px}.disaster-row{border-top:1px solid #edf0f5;padding:12px 0}.disaster-row>b{font-size:13px;color:#344054}.disaster-row p{font-size:12px;color:#667085;line-height:1.5;margin:4px 0}.row-top,.row-bottom{font-size:11px;color:#98a2b3;display:flex;align-items:center;justify-content:space-between}.row-bottom span{color:#2d8c72}.disaster-row{cursor:pointer}.photos{display:flex;gap:8px;flex-wrap:wrap}.photo,.add-photo{width:68px;height:68px;border-radius:8px}.photo{position:relative;overflow:hidden;background:#eaf2fb}.photo img{width:100%;height:100%;object-fit:cover}.photo i{position:absolute;right:3px;top:0;color:#fff;font-style:normal;background:#0008;border-radius:50%;width:18px;height:18px;text-align:center;cursor:pointer}.add-photo{display:flex;align-items:center;justify-content:center;border:1px dashed #b7cbe1;color:#3c78b5;font-size:12px;text-align:center;cursor:pointer}.add-photo input{display:none}.actions{display:flex;justify-content:flex-end}.timeline-title{font-weight:600;color:#243b5a;margin:18px 0 8px}.action-row{border-left:2px solid #2d8c72;padding:2px 0 8px 10px;margin-left:4px}.action-row b,.action-row span{display:block;font-size:12px}.action-row span{color:#98a2b3;margin-top:4px}.mobile-page :deep(.el-form-item){margin-bottom:13px}
 </style>
