@@ -27,18 +27,14 @@ let taskSeq = 20
 export const dispatchTask = (eventId, { assignee, deadlineDays, requirement }) =>
   mockRequest(() => {
     const ev = FSR_EVENTS.find((e) => e.id === eventId)
-    if (!ev) return { success: false }
+    if (!ev || ev.status !== 'pending') return { success: false, message: '仅待派发事件允许下发' }
     const now = new Date()
+    const dispatchedAt = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
     const deadline = new Date(now.getTime() + deadlineDays * 86400000).toISOString().slice(0, 10)
-    ev.status = 'checking'
-    ev.assignee = assignee
-    ev.deadline = deadline
-    ev.taskId = `TSK-2026-${String(taskSeq++).padStart(4, '0')}`
-    ev.trail.push({
-      time: `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`,
-      action: '任务已派发', user: '派发人（演示）',
-      extra: `责任单位：${assignee}，时限${deadlineDays}天${requirement ? '，要求：' + requirement : ''}，任务编号${ev.taskId}`
-    })
+    ev.status = 'checking'; ev.assignee = assignee; ev.checkResponsiblePerson = assignee; ev.checkResponsibleUnit = assignee
+    ev.dispatchedAt = dispatchedAt; ev.checkDeadline = deadline; ev.deadline = deadline; ev.taskId = `TSK-2026-${String(taskSeq++).padStart(4, '0')}`
+    ev.dispatchRequirement = requirement || ''
+    ev.trail.push({ time: dispatchedAt, action: '任务已派发', user: '派发人（演示）', extra: `责任单位：${assignee}，时限${deadlineDays}天${requirement ? '，要求：' + requirement : ''}，任务编号${ev.taskId}` })
     return { success: true, taskId: ev.taskId }
   }, 600)
 
@@ -46,10 +42,11 @@ export const dispatchTask = (eventId, { assignee, deadlineDays, requirement }) =
 export const submitCheckReport = (eventId, report) =>
   mockRequest(() => {
     const ev = FSR_EVENTS.find((e) => e.id === eventId)
-    if (!ev) return { success: false }
+    if (!ev || !['checking', 'recheck'].includes(ev.status)) return { success: false, message: '当前状态不允许现场核查上报' }
     const now = new Date()
-    ev.status = 'reviewing'
-    ev.checkReport = report
+    const checkedAt = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
+    ev.status = 'reviewing'; ev.checkedAt = checkedAt; ev.reportedAt = checkedAt
+    ev.checkReport = { ...report, checkedAt, checker: report.checker || ev.checkResponsiblePerson || '' }
     ev.trail.push({
       time: `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`,
       action: '现场核查完成并上报', user: `${report.checker}（皖政通移动核查）`,
@@ -62,9 +59,11 @@ export const submitCheckReport = (eventId, report) =>
 export const auditEvent = (eventId, action, opinion, auditor) =>
   mockRequest(() => {
     const ev = FSR_EVENTS.find((e) => e.id === eventId)
-    if (!ev) return { success: false }
+    if (!ev || ev.status !== 'reviewing') return { success: false, message: '仅待审核事件允许审核' }
     const now = new Date()
     const time = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
+    ev.auditedAt = time; ev.auditOpinion = opinion || ''
+    ev.auditor = auditor || '审核人'
     if (action === 'pass') {
       ev.status = 'rectifying'
       ev.trail.push({ time, action: '市级审核通过，转入整改', user: auditor, opinion: opinion || '核查材料完整，事实清楚，请责任单位限期整改' })
@@ -79,10 +78,13 @@ export const auditEvent = (eventId, action, opinion, auditor) =>
 export const submitRectify = (eventId, note) =>
   mockRequest(() => {
     const ev = FSR_EVENTS.find((e) => e.id === eventId)
-    if (!ev) return { success: false }
+    if (!ev || ev.status !== 'rectifying') return { success: false, message: '仅已审核事件允许提交整改' }
     const now = new Date()
-    ev.status = 'recheck'
-    ev.rectifyNote = { desc: note.desc, time: now.toISOString().slice(0, 10), unit: '责任单位' }
+    const time = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
+    ev.status = 'recheck'; ev.rectificationResponsiblePerson = note.rectificationResponsiblePerson || ev.rectificationResponsiblePerson || ev.assignee || ''
+    ev.rectifyDeadline = note.rectifyDeadline || note.deadline || ev.rectifyDeadline || ev.deadline
+    ev.completionDescription = note.completionDescription || note.desc || ''
+    ev.rectifyNote = { ...note, desc: note.desc || note.completionDescription || '', time: time.slice(0, 10), unit: note.rectificationResponsiblePerson || '责任单位' }
     ev.trail.push({
       time: `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`,
       action: '整改完成，申请复核', user: '责任单位（属地农业农村局）', extra: note.desc
@@ -94,7 +96,7 @@ export const submitRectify = (eventId, note) =>
 export const closeEvent = (eventId, action, opinion, auditor) =>
   mockRequest(() => {
     const ev = FSR_EVENTS.find((e) => e.id === eventId)
-    if (!ev) return { success: false }
+    if (!ev || ev.status !== 'recheck') return { success: false, message: '仅需复查事件允许结案' }
     const now = new Date()
     const time = `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 5)}`
     if (action === 'pass') {
@@ -113,7 +115,10 @@ export const adjustRisk = (eventId, risk, reason) =>
   mockRequest(() => {
     const ev = FSR_EVENTS.find((e) => e.id === eventId)
     if (!ev) return { success: false }
-    const oldRisk = ev.risk
+    const oldRisk = ev.riskFinal || ev.risk
+    ev.riskAuto = ev.riskAuto || oldRisk
+    ev.riskFinal = risk
+    ev.riskAdjustReason = reason || ''
     ev.risk = risk
     ev.trail.push({
       time: `${new Date().toISOString().slice(0, 10)} ${new Date().toTimeString().slice(0, 5)}`,

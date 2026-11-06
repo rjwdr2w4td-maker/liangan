@@ -13,9 +13,9 @@
         <strong>粮食计划管理</strong>
         <span>查看年度下达计划，填报播种与收获进度</span>
       </button>
-      <button class="quick-item system" @click="showUnavailable('青贮饲料管理')">
+      <button class="quick-item system" @click="$router.push('/mobile/wqt-silage')">
         <strong>青贮饲料管理</strong>
-        <span>青贮饲料生产与地块管理</span>
+        <span>青贮种植计划与收储信息填报</span>
       </button>
       <button class="quick-item system" @click="showUnavailable('粮食安全综合监管')">
         <strong>粮食安全综合监管</strong>

@@ -1,27 +1,88 @@
 <template>
   <div class="page-container sil-page">
-    <div class="page-head"><div><h2>青贮饲料申报备案</h2><p>统一查看种植计划、收储申报及受灾补充收储备案信息。</p></div><el-button v-if="isSubject" type="primary" @click="openCreate">新增申报</el-button></div>
-    <div class="panel">
-      <div class="panel-title"><span class="title-text">申报列表</span><span class="title-extra">共 {{ rows.length }} 条</span></div>
-      <el-tabs v-model="filters.type" @tab-change="load"><el-tab-pane label="全部申报" name="all"/><el-tab-pane label="种植计划/收储申报" name="declaration"/><el-tab-pane label="受灾补充收储" name="supplement"/></el-tabs>
-      <el-form :inline="true" class="filters"><el-form-item label="年份"><el-select v-model="filters.year" clearable placeholder="全部" style="width:120px"><el-option v-for="year in [2027, 2026]" :key="year" :label="`${year}年`" :value="year" /></el-select></el-form-item><el-form-item label="状态"><el-select v-model="filters.status" clearable placeholder="全部" style="width:130px"><el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item><el-form-item label="关键词"><el-input v-model="filters.keyword" clearable placeholder="主体、编号或品种" @keyup.enter="load" /></el-form-item><el-button type="primary" @click="load">查询</el-button><el-button @click="reset">重置</el-button></el-form>
-      <el-table :data="rows" stripe border><el-table-column prop="kind" label="申报类型" width="125"><template #default="{row}"><el-tag size="small" :type="row.kind === '受灾补充收储' ? 'warning' : 'success'">{{ row.kind }}</el-tag></template></el-table-column><el-table-column prop="year" label="年度" width="75"/><el-table-column prop="subjectName" label="申报主体" min-width="185" show-overflow-tooltip/><el-table-column prop="cropName" label="种植品种" width="105"/><el-table-column prop="area" label="面积（亩）" width="105" align="right"><template #default="{row}">{{ row.area ?? row.supplementArea ?? '—' }}</template></el-table-column><el-table-column prop="plotText" label="地块" min-width="140" show-overflow-tooltip/><el-table-column prop="expectedYield" label="预计产量（吨）" width="125" align="right"><template #default="{row}">{{ row.expectedYield ?? '—' }}</template></el-table-column><el-table-column prop="price" label="价格（元/吨）" width="125" align="right"><template #default="{row}">{{ row.price ?? '—' }}</template></el-table-column><el-table-column prop="weight" label="收储重量（吨）" width="125" align="right"><template #default="{row}">{{ row.weight ?? '—' }}</template></el-table-column><el-table-column prop="status" label="状态" width="95"><template #default="{row}"><el-tag size="small" :type="tagType(row.status)">{{ statusName(row.status) }}</el-tag></template></el-table-column><el-table-column prop="filedNo" label="备案编号" width="190" show-overflow-tooltip/><el-table-column label="操作" width="100" fixed="right"><template #default="{row}"><el-button link type="primary" @click="showDetail(row)">查看详情</el-button></template></el-table-column></el-table><el-empty v-if="!rows.length" description="暂无申报记录" />
+    <div class="page-head">
+      <div><h2>青贮种植计划</h2><p>管理全省及各地区青贮饲料年度种植计划面积和预计产量。</p></div>
     </div>
-    <el-dialog v-model="detailVisible" title="申报详情" width="860px"><template v-if="current"><el-descriptions :column="3" border><el-descriptions-item label="申报类型">{{ current.kind }}</el-descriptions-item><el-descriptions-item label="申报编号">{{ current.id }}</el-descriptions-item><el-descriptions-item label="年度">{{ current.year ? `${current.year}年` : '—' }}</el-descriptions-item><el-descriptions-item label="申报主体">{{ current.subjectName }}</el-descriptions-item><el-descriptions-item label="种植品种">{{ current.cropName || current.crop || '—' }}</el-descriptions-item><el-descriptions-item label="品种名称">{{ current.variety || '—' }}</el-descriptions-item><el-descriptions-item label="申报面积">{{ current.area ?? current.supplementArea ?? '—' }} 亩</el-descriptions-item><el-descriptions-item label="地块位置">{{ current.plotText || '未填报' }}</el-descriptions-item><el-descriptions-item label="预计产量">{{ current.expectedYield ?? '—' }} 吨</el-descriptions-item><el-descriptions-item label="收储价格">{{ current.price ?? '—' }} 元/吨</el-descriptions-item><el-descriptions-item label="收储重量">{{ current.weight ?? '—' }} 吨</el-descriptions-item><el-descriptions-item label="备案编号" :span="3">{{ current.filedNo || '待审核' }}</el-descriptions-item><el-descriptions-item v-if="current.disasterType" label="灾害情况" :span="3">{{ current.disasterType }}，受灾面积 {{ current.lostArea }} 亩；{{ current.expertEval }}</el-descriptions-item></el-descriptions><div class="sub-title">审核留痕</div><el-timeline v-if="current.auditTrail?.length"><el-timeline-item v-for="(item,index) in current.auditTrail" :key="index" :timestamp="item.time">{{ item.action }}<span class="trail-user">{{ item.user }}</span><div v-if="item.opinion" class="trail-opinion">{{ item.opinion }}</div></el-timeline-item></el-timeline><el-empty v-else description="暂无审核留痕" /></template></el-dialog>
-    <el-dialog v-model="formVisible" title="新增收储申报" width="560px"><el-form :model="form" label-width="100px"><el-form-item label="种植品种" required><el-select v-model="form.cropName" style="width:100%"><el-option label="青贮玉米" value="青贮玉米"/><el-option label="苜蓿" value="苜蓿"/></el-select></el-form-item><el-form-item label="品种名称" required><el-input v-model="form.variety"/></el-form-item><el-form-item label="申报面积" required><el-input-number v-model="form.area" :min="0" style="width:100%"/></el-form-item><el-form-item label="预计产量"><el-input-number v-model="form.expectedYield" :min="0" style="width:100%"/></el-form-item><el-form-item label="收储价格"><el-input-number v-model="form.price" :min="0" style="width:100%"/></el-form-item><el-form-item label="地块位置"><el-input v-model="form.plotIdsText" placeholder="多个地块用顿号分隔"/></el-form-item></el-form><template #footer><el-button @click="formVisible=false">取消</el-button><el-button type="primary" @click="submit">提交申报</el-button></template></el-dialog>
+    <div class="panel">
+      <div class="panel-title"><span class="title-text">青贮种植计划列表</span><span class="title-extra">共 {{ rows.length }} 条</span></div>
+      <el-form :inline="true" class="filters">
+        <el-form-item label="年度"><el-select v-model="filters.year" clearable placeholder="全部年度" style="width:130px"><el-option v-for="year in years" :key="year" :label="`${year}年`" :value="year" /></el-select></el-form-item>
+        <el-form-item label="地区"><el-input v-model="filters.region" clearable placeholder="省、市、县或乡镇" @keyup.enter="load" /></el-form-item>
+        <el-form-item label="青贮品种"><el-select v-model="filters.crop" clearable placeholder="全部品种" style="width:150px"><el-option v-for="crop in crops" :key="crop" :label="crop" :value="crop" /></el-select></el-form-item>
+        <el-button type="primary" @click="load">查询</el-button><el-button @click="reset">重置</el-button>
+      </el-form>
+      <div class="summary-grid">
+        <div class="summary-card"><span>年度计划面积</span><b>{{ totalArea.toFixed(1) }}</b><em>亩</em></div>
+        <div class="summary-card"><span>预计产量</span><b>{{ totalYield.toFixed(1) }}</b><em>吨</em></div>
+        <div class="summary-card"><span>覆盖地区</span><b>{{ regionCount }}</b><em>个</em></div>
+        <div class="summary-card"><span>青贮品种</span><b>{{ cropCount }}</b><em>种</em></div>
+      </div>
+      <el-table :data="rows" stripe border>
+        <el-table-column prop="year" label="年度" width="90"><template #default="{ row }">{{ row.year }}年</template></el-table-column>
+        <el-table-column prop="regionName" label="计划地区" min-width="190" show-overflow-tooltip/>
+        <el-table-column prop="cropName" label="青贮品种" width="130"/>
+        <el-table-column prop="planArea" label="年度计划面积（亩）" width="170" align="right"/>
+        <el-table-column prop="expectedYield" label="预计产量（吨）" width="150" align="right"/>
+        <el-table-column prop="subjectCount" label="种植主体数" width="120" align="right"/>
+        <el-table-column prop="plotCount" label="关联地块数" width="120" align="right"/>
+        <el-table-column label="计划状态" width="110"><template #default="{ row }"><el-tag size="small" type="success">已汇总</el-tag></template></el-table-column>
+        <el-table-column label="操作" width="100" fixed="right"><template #default="{ row }"><el-button link type="primary" @click="showDetail(row)">查看明细</el-button></template></el-table-column>
+      </el-table>
+      <el-empty v-if="!rows.length" description="暂无青贮种植计划" />
+    </div>
+    <el-dialog v-model="detailVisible" title="青贮种植计划明细" width="760px">
+      <template v-if="current">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="年度">{{ current.year }}年</el-descriptions-item><el-descriptions-item label="计划地区">{{ current.regionName }}</el-descriptions-item>
+          <el-descriptions-item label="青贮品种">{{ current.cropName }}</el-descriptions-item><el-descriptions-item label="种植主体数">{{ current.subjectCount }} 个</el-descriptions-item>
+          <el-descriptions-item label="年度计划面积">{{ current.planArea.toFixed(1) }} 亩</el-descriptions-item><el-descriptions-item label="预计产量">{{ current.expectedYield.toFixed(1) }} 吨</el-descriptions-item>
+          <el-descriptions-item label="关联地块数">{{ current.plotCount }} 块</el-descriptions-item><el-descriptions-item label="数据来源">青贮种植计划汇总</el-descriptions-item>
+        </el-descriptions>
+        <div class="sub-title">种植主体计划明细</div>
+        <el-table :data="current.details" stripe border max-height="360"><el-table-column prop="subjectName" label="种植主体" min-width="220" show-overflow-tooltip/><el-table-column prop="cropName" label="青贮品种" width="120"/><el-table-column prop="area" label="计划面积（亩）" width="130" align="right"/><el-table-column label="种植地块" min-width="240" show-overflow-tooltip><template #default="{ row }"><span>{{ row.plotNames || '未关联地块' }}</span></template></el-table-column><el-table-column prop="expectedYield" label="预计产量（吨）" width="130" align="right"/></el-table>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { fetchDeclarations, fetchSupplements, submitDeclaration } from '@/api/sil'
+import { fetchDeclarations } from '@/api/sil'
+import { getRegion } from '@/mock/common/regions'
+import { PLOT_MAP } from '@/mock/geo/plot-gen'
 import { useUserStore } from '@/stores/user'
-const userStore = useUserStore(); const isSubject = computed(() => !!userStore.role?.subjectId); const rows = ref([]); const current = ref(null); const detailVisible = ref(false); const formVisible = ref(false)
-const filters = reactive({ type: 'all', year: '', status: '', keyword: '' }); const form = reactive({ cropName: '青贮玉米', variety: '', area: 0, expectedYield: 0, price: 0, plotIdsText: '' }); const statusOptions = [{ value: 'draft', label: '草稿' }, { value: 'pending', label: '待审核' }, { value: 'returned', label: '退回补正' }, { value: 'rejected', label: '已驳回' }, { value: 'filed', label: '已备案' }]
-const statusName = (s) => ({ draft: '草稿', pending: '待审核', returned: '退回补正', rejected: '已驳回', filed: '已备案' }[s] || s); const tagType = (s) => ({ draft: 'info', pending: 'warning', returned: 'warning', rejected: 'danger', filed: 'success' }[s] || 'info')
-const load = async () => { const [declarations, supplements] = await Promise.all([fetchDeclarations(userStore.role), fetchSupplements(userStore.role)]); const declarationRows = declarations.map((r) => ({ ...r, kind: '种植计划/收储申报', plotText: r.plotIds?.join('、') || '—' })); const supplementRows = supplements.map((r) => ({ ...r, year: Number((r.createdAt || '').slice(0, 4)) || 2026, kind: '受灾补充收储', cropName: r.crop, area: r.supplementArea, plotText: '受灾地块', weight: '—' })); rows.value = [...(filters.type === 'supplement' ? [] : declarationRows), ...(filters.type === 'declaration' ? [] : supplementRows)].filter((r) => (!filters.year || r.year === filters.year) && (!filters.status || r.status === filters.status) && (!filters.keyword || `${r.id}${r.subjectName}${r.filedNo || ''}${r.cropName || ''}${r.variety || ''}`.includes(filters.keyword))) }
-const reset = () => { Object.assign(filters, { type: 'all', year: '', status: '', keyword: '' }); load() }; const showDetail = (row) => { current.value = row; detailVisible.value = true }; const openCreate = () => { Object.assign(form, { cropName: '青贮玉米', variety: '', area: 0, expectedYield: 0, price: 0, plotIdsText: '' }); formVisible.value = true }
-const submit = async () => { if (!form.variety || !form.area) return ElMessage.warning('请完善品种和面积'); const result = await submitDeclaration({ ...form, crop: form.cropName === '苜蓿' ? 'alfalfa' : 'silage_corn', year: 2027, subjectId: userStore.role.subjectId, subjectName: userStore.role.regionName || '申报主体', regionCode: userStore.role.regionCode, weight: form.expectedYield, plotIds: form.plotIdsText.split(/[、,，]/).filter(Boolean) }); if (result.success) { formVisible.value = false; ElMessage.success('申报已提交'); load() } }
+
+const userStore = useUserStore()
+const sourceRows = ref([])
+const rows = ref([])
+const current = ref(null)
+const detailVisible = ref(false)
+const filters = reactive({ year: '', region: '', crop: '' })
+const regionName = (code) => code === '340000' ? '全省' : getRegion(code)?.name || code || '未明确地区'
+const years = computed(() => [...new Set(sourceRows.value.map((item) => Number(item.year)).filter(Boolean))].sort((a, b) => b - a))
+const crops = computed(() => [...new Set(sourceRows.value.map((item) => item.cropName || item.crop).filter(Boolean))])
+const aggregate = (items) => {
+  const grouped = new Map()
+  items.forEach((item) => {
+    const key = `${item.year || 2026}-${item.regionCode || '340000'}-${item.cropName || item.crop || '其他青贮'}`
+    const plotIds = item.plotIds || []
+    const detail = { subjectId: item.subjectId, subjectName: item.subjectName || '未填报主体', cropName: item.cropName || item.crop || '其他青贮', area: Number(item.area ?? item.supplementArea ?? 0), expectedYield: Number(item.expectedYield || 0), plotIds, plotNames: plotIds.map((id) => PLOT_MAP[id]?.name || id).join('、') }
+    const row = grouped.get(key) || { year: Number(item.year || 2026), regionCode: item.regionCode || '340000', regionName: regionName(item.regionCode), cropName: detail.cropName, planArea: 0, expectedYield: 0, subjectIds: new Set(), plotIds: new Set(), details: [] }
+    row.planArea += detail.area; row.expectedYield += detail.expectedYield; row.subjectIds.add(item.subjectId || item.subjectName); plotIds.forEach((id) => row.plotIds.add(id)); row.details.push(detail); grouped.set(key, row)
+  })
+  return [...grouped.values()].map((row) => ({ ...row, subjectCount: row.subjectIds.size, plotCount: row.plotIds.size })).sort((a, b) => b.year - a.year || a.regionName.localeCompare(b.regionName, 'zh-CN'))
+}
+const load = async () => {
+  sourceRows.value = await fetchDeclarations(userStore.role)
+  rows.value = aggregate(sourceRows.value).filter((row) => (!filters.year || row.year === filters.year) && (!filters.crop || row.cropName === filters.crop) && (!filters.region || row.regionName.includes(filters.region)))
+}
+const reset = () => { Object.assign(filters, { year: '', region: '', crop: '' }); load() }
+const showDetail = (row) => { current.value = row; detailVisible.value = true }
+const totalArea = computed(() => rows.value.reduce((sum, row) => sum + row.planArea, 0))
+const totalYield = computed(() => rows.value.reduce((sum, row) => sum + row.expectedYield, 0))
+const regionCount = computed(() => new Set(rows.value.map((row) => row.regionCode)).size)
+const cropCount = computed(() => new Set(rows.value.map((row) => row.cropName)).size)
 onMounted(load)
 </script>
-<style scoped lang="scss">.sil-page{overflow:auto}.page-head{display:flex;justify-content:space-between;margin-bottom:14px}.page-head h2{margin:4px 0;color:var(--ah-text);font-size:22px}.page-head p{color:var(--ah-text-secondary);font-size:13px}.filters{display:flex;align-items:center;flex-wrap:wrap}.filters :deep(.el-form-item){margin-bottom:12px}.sub-title{margin:18px 0 10px;padding-left:8px;border-left:3px solid var(--ah-primary);font-weight:600}.trail-user{margin-left:12px;color:#8492a6}.trail-opinion{margin-top:4px;color:#667085}</style>
+<style scoped lang="scss">
+.sil-page{overflow:auto}.page-head{display:flex;justify-content:space-between;margin-bottom:14px}.page-head h2{margin:4px 0;color:var(--ah-text);font-size:22px}.page-head p{color:var(--ah-text-secondary);font-size:13px}.filters{display:flex;align-items:center;flex-wrap:wrap}.filters :deep(.el-form-item){margin-bottom:12px}.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:4px 0 16px}.summary-card{padding:14px 18px;border:1px solid #e4ebf3;border-radius:8px;background:#f8fbff}.summary-card span{display:block;color:#718096;font-size:13px}.summary-card b{margin-top:5px;color:#1d5d9b;font-size:24px}.summary-card em{margin-left:6px;color:#718096;font-size:12px;font-style:normal}.sub-title{margin:18px 0 10px;padding-left:8px;border-left:3px solid var(--ah-primary);font-weight:600}@media(max-width:900px){.summary-grid{grid-template-columns:repeat(2,1fr)}}
+</style>

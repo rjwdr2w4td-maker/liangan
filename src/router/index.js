@@ -57,8 +57,10 @@ const routes = [
         path: 'sil',
         meta: { subsystem: 'sil' },
         children: [
-          { path: 'declare', name: 'SilDeclare', component: () => import('@/views/sil/DeclareList.vue'), meta: { title: '收储申报' } },
-          { path: 'audit', name: 'SilAudit', component: () => import('@/views/sil/AuditList.vue'), meta: { title: '县级备案审核', roles: ['province', 'city', 'county'] } },
+          { path: 'growers', name: 'SilGrowers', component: () => import('@/views/sil/Growers.vue'), meta: { title: '种植主体列表', roles: ['province'] } },
+          { path: 'plots', name: 'SilPlots', component: () => import('@/views/sil/Plots.vue'), meta: { title: '种植地块列表', roles: ['province'] } },
+          { path: 'declare', name: 'SilDeclare', component: () => import('@/views/sil/DeclareList.vue'), meta: { title: '青贮种植计划' } },
+          { path: 'audit', name: 'SilAudit', component: () => import('@/views/sil/AuditList.vue'), meta: { title: '青贮作物收储', roles: ['province', 'city', 'county'] } },
           { path: 'fence', name: 'SilFence', component: () => import('@/views/sil/FenceMap.vue'), meta: { title: '种植上图·数字围栏' } },
           { path: 'ledger', name: 'SilLedger', component: () => import('@/views/sil/Ledger.vue'), meta: { title: '收储台账' } }
         ]
@@ -69,10 +71,10 @@ const routes = [
         path: 'fsr',
         meta: { subsystem: 'fsr' },
         children: [
-          { path: 'events', name: 'FsrEvents', component: () => import('@/views/fsr/EventCenter.vue'), meta: { title: '事件中心' } },
-          { path: 'task', name: 'FsrTask', component: () => import('@/views/fsr/TaskDispatch.vue'), meta: { title: '任务派发跟踪' } },
-          { path: 'handle', name: 'FsrHandle', component: () => import('@/views/fsr/HandleWorkbench.vue'), meta: { title: '处置工作台', roles: ['city', 'province'] } },
-          { path: 'stats', name: 'FsrStats', component: () => import('@/views/fsr/ReviewStats.vue'), meta: { title: '复盘考核统计', roles: ['province', 'city'] } }
+          { path: 'stats', name: 'FsrStats', component: () => import('@/views/fsr/ReviewStats.vue'), meta: { title: '长势对比库', roles: ['province', 'city'] } },
+          { path: 'events', name: 'FsrEvents', component: () => import('@/views/fsr/EventCenter.vue'), meta: { title: '变化图斑库' } },
+          { path: 'task', name: 'FsrTask', component: () => import('@/views/fsr/TaskDispatch.vue'), meta: { title: '任务流程库' } },
+          { path: 'handle', name: 'FsrHandle', component: () => import('@/views/fsr/HandleWorkbench.vue'), meta: { title: '现场核查整改库', roles: ['city', 'province'] } }
         ]
       },
 
@@ -102,7 +104,11 @@ const routes = [
       { path: 'wzt-progress', name: 'MobileWztProgress', component: () => import('@/views/mobile/WanzhengtongProgress.vue'), meta: { title: '皖政通·进度填报' } },
       { path: 'wzt-policies', name: 'MobileWztPolicies', component: () => import('@/views/mobile/WanzhengtongPolicies.vue'), meta: { title: '皖政通·惠农政策' } },
       { path: 'wzt-disaster', name: 'MobileWztDisaster', component: () => import('@/views/mobile/WanzhengtongDisaster.vue'), meta: { title: '皖政通·灾情上报' } },
+      { path: 'wzt-silage', name: 'MobileWztSilage', component: () => import('@/views/mobile/WanzhengtongSilage.vue'), meta: { title: '皖政通·青贮饲料管理' } },
+      { path: 'wzt-safety', name: 'MobileWztSafety', component: () => import('@/views/mobile/WanzhengtongSafety.vue'), meta: { title: '皖政通·粮食安全综合监管' } },
+      { path: 'wzt-food-safety', name: 'MobileWztFoodSafety', component: () => import('@/views/mobile/WanzhengtongFoodSafety.vue'), meta: { title: '皖政通·粮食安全综合监管' } },
       { path: 'gpm', name: 'MobileGpm', component: () => import('@/views/mobile/GpmMobileHome.vue'), meta: { title: '粮食计划管理' } },
+      { path: 'wqt-silage', name: 'MobileWqtSilage', component: () => import('@/views/mobile/WanqitongSilage.vue'), meta: { title: '皖企通·青贮饲料管理' } },
       { path: 'plans', name: 'MobilePlans', component: () => import('@/views/mobile/PlanList.vue'), meta: { title: '计划列表' } },
       { path: 'progress', name: 'MobileProgress', component: () => import('@/views/mobile/ProgressList.vue'), meta: { title: '播种与收获' } },
       { path: 'policies', name: 'MobilePolicies', component: () => import('@/views/mobile/PolicyList.vue'), meta: { title: '惠农政策' } },

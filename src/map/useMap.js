@@ -77,6 +77,35 @@ export function useMap() {
     Object.keys(layers).forEach((id) => id !== '__tile' && removeLayer(id))
   }
 
+  const startPolygonDraw = (options = {}) => {
+    if (!map.value) return null
+    removeLayer('__draw')
+    const points = []
+    const markers = []
+    let polygon = null
+    const finish = () => {
+      if (points.length < 3) return null
+      const ring = points.map((p) => [p[1], p[0]])
+      ring.push([...ring[0]])
+      const geometry = { type: 'Polygon', coordinates: [ring] }
+      options.onFinish?.(geometry)
+      return geometry
+    }
+    const redraw = () => {
+      if (polygon) map.value.removeLayer(polygon)
+      if (points.length >= 2) polygon = L.polygon(points, { color: '#168c86', weight: 2, fillOpacity: 0.22 }).addTo(map.value)
+    }
+    const click = (e) => {
+      points.push([e.latlng.lat, e.latlng.lng])
+      markers.push(L.circleMarker(e.latlng, { radius: 5, color: '#168c86', fillColor: '#fff', fillOpacity: 1 }).addTo(map.value))
+      redraw()
+      options.onChange?.(points.map((p) => [p[1], p[0]]))
+    }
+    map.value.on('click', click)
+    layers.__draw = { remove: () => { map.value?.off('click', click); markers.forEach((m) => map.value?.removeLayer(m)); if (polygon) map.value?.removeLayer(polygon); delete layers.__draw } }
+    return { finish, undo: () => { points.pop(); const marker = markers.pop(); marker?.remove(); redraw(); }, clear: () => { points.splice(0); markers.splice(0).forEach((m) => m.remove()); redraw() }, getPoints: () => points.map((p) => [p[1], p[0]]), stop: () => layers.__draw?.remove() }
+  }
+
   onUnmounted(() => {
     if (map.value) {
       map.value.remove()
@@ -84,5 +113,5 @@ export function useMap() {
     }
   })
 
-  return { map, initMap, setTile, flyTo, fitBounds, addGeoJSON, addLayer, removeLayer, getLayer, clearAll }
+  return { map, initMap, setTile, flyTo, fitBounds, addGeoJSON, addLayer, removeLayer, getLayer, clearAll, startPolygonDraw }
 }

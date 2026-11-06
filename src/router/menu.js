@@ -35,8 +35,10 @@ export const MENU_CONFIG = [
     icon: 'Wheat',
     system: 'sil',
     children: [
-      { title: '收储申报', route: '/sil/declare', icon: 'Tickets' },
-      { title: '县级备案审核', route: '/sil/audit', icon: 'Stamp', roles: ['province', 'city', 'county'] },
+      { title: '种植主体列表', route: '/sil/growers', icon: 'User', roles: ['province'] },
+      { title: '种植地块列表', route: '/sil/plots', icon: 'Grid', roles: ['province'] },
+      { title: '青贮种植计划', route: '/sil/declare', icon: 'Tickets' },
+      { title: '青贮作物收储', route: '/sil/audit', icon: 'Stamp', roles: ['province', 'city', 'county'] },
       { title: '种植上图·数字围栏', route: '/sil/fence', icon: 'Grid' },
       { title: '收储台账', route: '/sil/ledger', icon: 'Notebook' },
       { title: '青贮饲料一张图', route: '/onemap/silage', icon: 'Picture' }
@@ -47,10 +49,10 @@ export const MENU_CONFIG = [
     icon: 'Warning',
     system: 'fsr',
     children: [
-      { title: '事件中心', route: '/fsr/events', icon: 'MessageBox' },
-      { title: '任务派发跟踪', route: '/fsr/task', icon: 'Position' },
-      { title: '处置工作台', route: '/fsr/handle', icon: 'Tools', roles: ['city', 'province'] },
-      { title: '复盘考核统计', route: '/fsr/stats', icon: 'PieChart', roles: ['province', 'city'] },
+      { title: '长势对比库', route: '/fsr/stats', icon: 'PieChart', roles: ['province', 'city'] },
+      { title: '变化图斑库', route: '/fsr/events', icon: 'MessageBox' },
+      { title: '任务流程库', route: '/fsr/task', icon: 'Position' },
+      { title: '现场核查整改库', route: '/fsr/handle', icon: 'Tools', roles: ['city', 'province'] },
       { title: '粮食安全监测一张图', route: '/onemap/safety', icon: 'DataBoard' }
     ]
   },

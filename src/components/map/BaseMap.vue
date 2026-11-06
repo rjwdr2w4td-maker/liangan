@@ -27,6 +27,7 @@ defineExpose({
   removeLayer: mapApi.removeLayer,
   getLayer: mapApi.getLayer,
   clearAll: mapApi.clearAll,
+  startPolygonDraw: mapApi.startPolygonDraw,
   setTile: mapApi.setTile
 })
 </script>

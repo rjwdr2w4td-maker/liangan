@@ -12,10 +12,10 @@
         <button class="quick-item plan" @click="$router.push('/mobile/wzt-gpm')">
           <strong>粮食计划管理</strong>
         </button>
-        <button class="quick-item system" @click="showUnavailable('青贮饲料管理')">
+        <button class="quick-item system" @click="$router.push('/mobile/wzt-silage')">
           <strong>青贮饲料管理</strong>
         </button>
-        <button class="quick-item system" @click="showUnavailable('粮食安全综合监管')">
+        <button class="quick-item system" @click="$router.push('/mobile/wzt-food-safety')">
           <strong>粮食安全综合监管</strong>
         </button>
         <button class="quick-item system" @click="showUnavailable('农药数字监督管理')">
